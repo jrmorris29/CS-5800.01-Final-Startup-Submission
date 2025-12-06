@@ -1,0 +1,235 @@
+@startuml
+title Meeting Summarizer – Class UML (Refactored with Design Patterns)
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam wrapWidth 200
+
+' ===== Core Domain =====
+class User {
+  +userId: UUID
+  +name: String
+  +email: String
+  --
+  +startCapture(): void
+  +stopCapture(): void
+  +importTranscript(file: File): void
+  +requestSummary(): void
+  +requestActionItems(): void
+  +approveResults(): void
+  +export(format: ExportFormat, dest: ExportDestination): void
+  +saveToWorkspace(title: String, tags: List< String >): MeetingRecord
+  +search(query: String): List< MeetingRecord >
+  +toggleAutoSend(eventId: String, enabled: boolean): void
+}
+
+class SystemController {
+  +startCapture(): void
+  +stopCapture(): Transcript
+  +importTranscript(file: File): Transcript
+  +createRecordBuilder(): MeetingRecordBuilder
+  +generateSummary(t: Transcript): Summary
+  +extractActions(t: Transcript): List< ActionItem >
+  +approveResults(rec: MeetingRecord): void
+  +saveRecord(rec: MeetingRecord): void
+  +search(q: String): List< MeetingRecord >
+  +export(rec: MeetingRecord, fmt: ExportFormat, dest: ExportDestination): ExportResult
+  +autoSend(rec: MeetingRecord, eventId: String): void
+}
+
+class Recorder {
+  -stream: AudioStream
+  -permissionGranted: boolean
+  --
+  +requestPermissions(): boolean
+  +begin(tabId: String): void
+  +end(): AudioFile
+  +isRecording(): boolean
+}
+
+interface Transcriber {
+  +transcribe(audio: AudioFile): Transcript
+  +parse(file: File): Transcript
+}
+class SpeechToTextService implements Transcriber
+
+interface Summarizer {
+  +summarize(t: Transcript): Summary
+  +extractActions(t: Transcript): List< ActionItem >
+}
+class LLMService implements Summarizer
+
+' === Proxy pattern: SummarizerProxy ===
+class SummarizerProxy implements Summarizer {
+  -real: Summarizer
+  -cache: Map< UUID, Summary >
+  --
+  +summarize(t: Transcript): Summary
+  +extractActions(t: Transcript): List< ActionItem >
+}
+
+class Transcript {
+  +id: UUID
+  +rawText: Text
+  +timestamps: List< Timestamp >
+  +source: TranscriptSource
+  --
+  +segmentAt(time: Time): String
+}
+
+class Summary {
+  +id: UUID
+  +topics: List< String >
+  +decisions: List< String >
+  +notes: Text
+}
+
+class ActionItem {
+  +id: UUID
+  +title: String
+  +owner: Participant
+  +dueDate: LocalDate
+  +status: ActionStatus
+}
+
+class MeetingRecord {
+  +id: UUID
+  +title: String
+  +tags: List< String >
+  +date: LocalDateTime
+  +status: ApprovalStatus
+  +participants: List< Participant >
+  --
+  +setTranscript(t: Transcript): void
+  +setSummary(s: Summary): void
+  +setActions(a: List< ActionItem >): void
+}
+
+' === Builder pattern: MeetingRecordBuilder ===
+class MeetingRecordBuilder {
+  -record: MeetingRecord
+  --
+  +withTitle(title: String): MeetingRecordBuilder
+  +withTags(tags: List< String >): MeetingRecordBuilder
+  +withDate(date: LocalDateTime): MeetingRecordBuilder
+  +withParticipants(p: List< Participant >): MeetingRecordBuilder
+  +withTranscript(t: Transcript): MeetingRecordBuilder
+  +withSummary(s: Summary): MeetingRecordBuilder
+  +withActions(a: List< ActionItem >): MeetingRecordBuilder
+  +build(): MeetingRecord
+}
+
+class Participant {
+  +name: String
+  +email: String
+  +role: String
+}
+
+' ===== Supporting Services =====
+class Workspace {
+  +records: List< MeetingRecord >
+  --
+  +save(rec: MeetingRecord): void
+  +findByQuery(q: String): List< MeetingRecord >
+  +get(id: UUID): MeetingRecord
+}
+
+interface Exporter {
+  +export(rec: MeetingRecord, fmt: ExportFormat, dest: ExportDestination): ExportResult
+}
+class ExportService implements Exporter
+
+class SearchService {
+  +index(rec: MeetingRecord): void
+  +search(q: String): List< MeetingRecord >
+}
+
+interface Notifier {
+  +emailParticipants(rec: MeetingRecord, eventId: String): void
+}
+class EmailNotifier implements Notifier
+
+' ===== Enums / Value Objects =====
+enum TranscriptSource {
+  LIVE
+  IMPORTED
+}
+
+enum ApprovalStatus {
+  DRAFT
+  APPROVED
+}
+
+enum ActionStatus {
+  OPEN
+  DONE
+}
+
+enum ExportFormat {
+  GOOGLE_DOC
+  MARKDOWN
+  CLIPBOARD
+  EMAIL
+}
+
+enum ExportDestination {
+  DRIVE
+  FILE
+  CLIPBOARD
+  MAIL
+}
+
+class ExportResult {
+  +success: boolean
+  +link: String
+  +message: String
+}
+
+class AudioFile {
+  +path: String
+  +durationSec: int
+}
+
+class AudioStream
+
+class Timestamp {
+  +start: Time
+  +end: Time
+}
+
+class Time
+
+' ===== Relationships =====
+User --> SystemController : «uses»
+SystemController ..> Recorder : «controls»
+SystemController ..> Transcriber : «uses»
+SystemController ..> SummarizerProxy : «uses proxy»
+SystemController ..> Workspace : «saves/loads»
+SystemController ..> Exporter : «uses»
+SystemController ..> Notifier : «uses»
+SystemController ..> SearchService : «queries»
+SystemController ..> MeetingRecordBuilder : «creates builder»
+
+Recorder --> AudioStream : manages >
+Recorder --> AudioFile : produces >
+
+Transcriber --> Transcript : returns
+Summarizer --> Summary : returns
+Summarizer --> ActionItem : returns *
+SummarizerProxy o-- Summarizer : «wraps/delegates»
+
+Workspace o-- "0..*" MeetingRecord : stores
+SearchService ..> Workspace : indexes from
+MeetingRecord *-- "1" Transcript
+MeetingRecord *-- "1" Summary
+MeetingRecord *-- "0..*" ActionItem
+MeetingRecord o-- "0..*" Participant
+
+MeetingRecordBuilder --> MeetingRecord : «builds»
+
+ActionItem o-- "0..1" Participant : owner
+
+User o-- "0..*" MeetingRecord : views
+
+@enduml

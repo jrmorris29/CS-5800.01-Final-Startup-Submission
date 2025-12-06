@@ -1,0 +1,129 @@
+@startuml
+title EchoNote - Overall Architecture
+
+package "EchoNote.App" {
+    class AppMain
+    class AppConfig
+    class SwingUI
+}
+
+package "EchoNote.Config" {
+    class OpenAiClientFactory
+}
+
+package "EchoNote.Jack" {
+    class Workspace
+    class MeetingRecord
+    class MeetingRecordBuilder
+    class Participant
+    class Transcript
+    class Summary
+    class ActionItem
+
+    enum TranscriptSource
+    enum ApprovalStatus
+    enum ActionStatus
+
+    enum ExportFormat
+    enum ExportDestination
+    class ExportResult
+
+    class InvalidEmailException
+    class RecordNotFoundException
+}
+
+package "EchoNote.Mihail" {
+    class Recorder
+    class Transcriber
+    class Summarizer
+    class TranscriptionException
+    class SummarizationException
+}
+
+package "EchoNote.Arpit" {
+    class ExportService
+    class SearchService
+    interface Notifier
+    class EmailNotifier
+    class NotificationException
+    class UnsupportedExportException
+}
+
+AppMain --> AppConfig
+AppMain --> SwingUI
+
+AppConfig --> Workspace
+AppConfig --> Transcriber
+AppConfig --> Summarizer
+AppConfig --> ExportService
+AppConfig --> SearchService
+AppConfig --> EmailNotifier
+
+SwingUI --> Workspace
+SwingUI --> Transcriber
+SwingUI --> Summarizer
+SwingUI --> ExportService
+SwingUI --> SearchService
+SwingUI --> EmailNotifier
+SwingUI --> Recorder
+
+OpenAiClientFactory --> Transcriber
+OpenAiClientFactory --> Summarizer
+
+Workspace "1" o-- "*" MeetingRecord
+
+MeetingRecord "1" o-- "*" Participant
+MeetingRecord "1" o-- "*" ActionItem
+MeetingRecord "1" o-- "0..1" Transcript
+MeetingRecord "1" o-- "0..1" Summary
+
+MeetingRecord --> ApprovalStatus
+Transcript --> TranscriptSource
+ActionItem --> ActionStatus
+ActionItem --> Participant
+
+MeetingRecordBuilder --> MeetingRecord
+MeetingRecordBuilder --> Participant
+MeetingRecordBuilder --> ActionItem
+MeetingRecordBuilder --> Transcript
+MeetingRecordBuilder --> Summary
+
+ExportResult --> MeetingRecord
+ExportResult --> ExportFormat
+ExportResult --> ExportDestination
+
+InvalidEmailException --> Participant
+RecordNotFoundException --> Workspace
+
+Recorder --> TranscriptionException
+
+Transcriber --> Transcript
+Transcriber --> TranscriptSource
+Transcriber --> TranscriptionException
+
+Summarizer --> Transcript
+Summarizer --> Summary
+Summarizer --> ActionItem
+Summarizer --> Participant
+Summarizer --> ActionStatus
+Summarizer --> SummarizationException
+
+SearchService --> Workspace
+SearchService --> MeetingRecord
+
+ExportService --> MeetingRecord
+ExportService --> ExportResult
+ExportService --> Summary
+ExportService --> ActionItem
+ExportService --> UnsupportedExportException
+
+Notifier --> MeetingRecord
+
+EmailNotifier ..|> Notifier
+EmailNotifier --> MeetingRecord
+EmailNotifier --> Participant
+EmailNotifier --> Summary
+EmailNotifier --> ActionItem
+EmailNotifier --> NotificationException
+
+@enduml

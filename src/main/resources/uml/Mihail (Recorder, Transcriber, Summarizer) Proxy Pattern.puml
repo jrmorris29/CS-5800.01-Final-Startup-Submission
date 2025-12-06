@@ -1,0 +1,41 @@
+@startuml
+title Mihail - Recording, Transcription and Summarization
+
+package "EchoNote.Jack" {
+    class Transcript
+    class Summary
+    class ActionItem
+    class Participant
+
+    enum TranscriptSource
+    enum ActionStatus
+}
+
+package "EchoNote.Mihail" {
+    class Recorder
+    class Transcriber
+    class Summarizer
+    class TranscriptionException
+    class SummarizationException
+}
+
+package "EchoNote.Config" {
+    class OpenAiClientFactory
+}
+
+Recorder --> TranscriptionException
+
+Transcriber --> Transcript
+Transcriber --> TranscriptSource
+Transcriber --> TranscriptionException
+Transcriber --> OpenAiClientFactory
+
+Summarizer --> Transcript
+Summarizer --> Summary
+Summarizer --> ActionItem
+Summarizer --> Participant
+Summarizer --> ActionStatus
+Summarizer --> SummarizationException
+Summarizer --> OpenAiClientFactory
+
+@enduml

@@ -1,0 +1,40 @@
+@startuml
+title Arpit - Export, Search, Notify
+
+package "EchoNote.Jack" {
+    class MeetingRecord
+    class Workspace
+    class Participant
+    class Summary
+    class ActionItem
+    class ExportResult
+}
+
+package "EchoNote.Arpit" {
+    class ExportService
+    class SearchService
+    interface Notifier
+    class EmailNotifier
+    class NotificationException
+    class UnsupportedExportException
+}
+
+SearchService --> Workspace
+SearchService --> MeetingRecord
+
+ExportService --> MeetingRecord
+ExportService --> ExportResult
+ExportService --> Summary
+ExportService --> ActionItem
+ExportService --> UnsupportedExportException
+
+Notifier --> MeetingRecord
+
+EmailNotifier ..|> Notifier
+EmailNotifier --> MeetingRecord
+EmailNotifier --> Participant
+EmailNotifier --> Summary
+EmailNotifier --> ActionItem
+EmailNotifier --> NotificationException
+
+@enduml

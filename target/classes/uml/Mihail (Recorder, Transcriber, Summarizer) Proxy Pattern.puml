@@ -1,0 +1,120 @@
+@startuml
+title Mihail – Capture & Summarization Layer
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam wrapWidth 200
+
+' ===== Owned by Mihail =====
+class Recorder {
+  -stream: AudioStream
+  -permissionGranted: boolean
+  --
+  +requestPermissions(): boolean
+  +begin(tabId: String): void
+  +end(): AudioFile
+  +isRecording(): boolean
+}
+
+interface Transcriber {
+  +transcribe(audio: AudioFile): Transcript
+  +parse(file: File): Transcript
+}
+
+class SpeechToTextService implements Transcriber {
+  +transcribe(audio: AudioFile): Transcript
+  +parse(file: File): Transcript
+}
+
+interface Summarizer {
+  +summarize(t: Transcript): Summary
+  +extractActions(t: Transcript): List<ActionItem>
+}
+
+class LLMService implements Summarizer {
+  +summarize(t: Transcript): Summary
+  +extractActions(t: Transcript): List<ActionItem>
+}
+
+' === Proxy pattern ===
+class SummarizerProxy implements Summarizer {
+  -real: Summarizer
+  -summaryCache: Map<UUID, Summary>
+  -actionsCache: Map<UUID, List<ActionItem>>
+  --
+  +SummarizerProxy(real: Summarizer)
+  +summarize(t: Transcript): Summary
+  +extractActions(t: Transcript): List<ActionItem>
+}
+
+' ===== Shared domain types for context =====
+class Transcript {
+  +id: UUID
+  +rawText: Text
+  +timestamps: List<Timestamp>
+  +source: TranscriptSource
+}
+
+class Summary {
+  +id: UUID
+  +topics: List<String>
+  +decisions: List<String>
+  +notes: Text
+}
+
+class ActionItem {
+  +id: UUID
+  +title: String
+  +owner: Participant
+  +dueDate: LocalDate
+  +status: ActionStatus
+}
+
+class Participant {
+  +name: String
+  +email: String
+  +role: String
+}
+
+class AudioFile {
+  +path: String
+  +durationSec: int
+}
+
+class AudioStream
+
+class Timestamp {
+  +start: Time
+  +end: Time
+}
+
+class Time
+
+enum TranscriptSource {
+  LIVE
+  IMPORTED
+}
+
+enum ActionStatus {
+  OPEN
+  DONE
+}
+
+' ===== Relationships =====
+Recorder --> AudioStream : manages >
+Recorder --> AudioFile : produces >
+
+SpeechToTextService --> Transcript : returns
+Transcriber --> Transcript : returns
+
+Summarizer <|.. LLMService
+Summarizer <|.. SummarizerProxy
+SummarizerProxy o-- Summarizer : wraps/delegates
+
+Summarizer --> Summary : returns
+Summarizer --> ActionItem : returns *
+
+ActionItem o-- "0..1" Participant : owner
+
+@enduml

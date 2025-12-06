@@ -1,0 +1,50 @@
+@startuml
+title Jack - Core Domain and Builder
+
+package "EchoNote.Jack" {
+    class Workspace
+    class MeetingRecord
+    class MeetingRecordBuilder
+    class Participant
+    class Transcript
+    class Summary
+    class ActionItem
+
+    enum TranscriptSource
+    enum ApprovalStatus
+    enum ActionStatus
+
+    enum ExportFormat
+    enum ExportDestination
+    class ExportResult
+
+    class InvalidEmailException
+    class RecordNotFoundException
+}
+
+Workspace "1" o-- "*" MeetingRecord
+
+MeetingRecord "1" o-- "*" Participant
+MeetingRecord "1" o-- "*" ActionItem
+MeetingRecord "1" o-- "0..1" Transcript
+MeetingRecord "1" o-- "0..1" Summary
+
+MeetingRecord --> ApprovalStatus
+Transcript --> TranscriptSource
+ActionItem --> ActionStatus
+ActionItem --> Participant
+
+ExportResult --> MeetingRecord
+ExportResult --> ExportFormat
+ExportResult --> ExportDestination
+
+InvalidEmailException --> Participant
+RecordNotFoundException --> Workspace
+
+MeetingRecordBuilder --> MeetingRecord
+MeetingRecordBuilder --> Participant
+MeetingRecordBuilder --> ActionItem
+MeetingRecordBuilder --> Transcript
+MeetingRecordBuilder --> Summary
+
+@enduml
