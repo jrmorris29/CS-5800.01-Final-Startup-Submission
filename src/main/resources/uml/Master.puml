@@ -1,5 +1,15 @@
 @startuml
-title EchoNote - Overall Architecture
+title EchoNote - Overall Architecture with Design Patterns
+
+skinparam classAttributeIconSize 0
+
+note as DesignPatterns
+  **Design Patterns:**
+  1. Singleton + Factory - OpenAiClientFactory
+  2. Builder - MeetingRecordBuilder
+  3. Iterator - MeetingRecordIterator
+  4. Proxy - TranscriberProxy
+end note
 
 package "EchoNote.App" {
     class AppMain
@@ -8,13 +18,20 @@ package "EchoNote.App" {
 }
 
 package "EchoNote.Config" {
-    class OpenAiClientFactory
+    class OpenAiClientFactory <<Singleton, Factory>> {
+        - {static} CLIENT : OpenAIClient
+        --
+        - {static} createClient() : OpenAIClient
+        + {static} getClient() : OpenAIClient
+    }
 }
 
 package "EchoNote.Jack" {
     class Workspace
     class MeetingRecord
-    class MeetingRecordBuilder
+    class MeetingRecordBuilder <<Builder>>
+    class MeetingRecordCollection <<Aggregate>>
+    class MeetingRecordIterator <<Iterator>>
     class Participant
     class Transcript
     class Summary
@@ -34,7 +51,9 @@ package "EchoNote.Jack" {
 
 package "EchoNote.Mihail" {
     class Recorder
-    class Transcriber
+    interface TranscriptionService <<Subject>>
+    class Transcriber <<RealSubject>>
+    class TranscriberProxy <<Proxy>>
     class Summarizer
     class TranscriptionException
     class SummarizationException
@@ -96,6 +115,16 @@ InvalidEmailException --> Participant
 RecordNotFoundException --> Workspace
 
 Recorder --> TranscriptionException
+
+' Iterator Pattern
+MeetingRecordCollection o-- "*" MeetingRecord
+MeetingRecordCollection --> MeetingRecordIterator : creates
+MeetingRecordIterator --> MeetingRecord : traverses
+
+' Proxy Pattern
+TranscriptionService <|.. Transcriber
+TranscriptionService <|.. TranscriberProxy
+TranscriberProxy --> TranscriptionService : delegates to
 
 Transcriber --> Transcript
 Transcriber --> TranscriptSource

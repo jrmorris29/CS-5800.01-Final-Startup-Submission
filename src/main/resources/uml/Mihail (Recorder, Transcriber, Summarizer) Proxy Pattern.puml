@@ -1,41 +1,115 @@
 @startuml
-title Mihail - Recording, Transcription and Summarization
+title Mihail - Recording, Transcription & Summarization with Proxy Pattern
+
+skinparam classAttributeIconSize 0
+
+note as N1
+  **Proxy Pattern:**
+  TranscriberProxy adds caching,
+  logging, and statistics.
+end note
 
 package "EchoNote.Jack" {
-    class Transcript
-    class Summary
-    class ActionItem
-    class Participant
+    class Transcript {
+        - id : String
+        - rawText : String
+        - source : TranscriptSource
+    }
 
-    enum TranscriptSource
-    enum ActionStatus
+    class Summary {
+        - id : String
+        - topics : List<String>
+        - decisions : List<String>
+        - notes : String
+    }
+
+    class ActionItem {
+        - id : String
+        - description : String
+        - owner : Participant
+        - dueDate : LocalDate
+    }
 }
 
 package "EchoNote.Mihail" {
-    class Recorder
-    class Transcriber
-    class Summarizer
-    class TranscriptionException
-    class SummarizationException
+
+    interface TranscriptionService <<Subject>> {
+        + transcribe(audioFile : Path) : Transcript
+    }
+
+
+
+    class Transcriber <<RealSubject>> {
+        - httpClient : OkHttpClient
+        - objectMapper : ObjectMapper
+        - apiKey : String
+        --
+        + Transcriber()
+        + Transcriber(apiKey : String)
+        + transcribe(audioFile : Path) : Transcript
+        + transcribeFile(wavFile : Path) : Transcript
+    }
+
+
+
+    class TranscriberProxy <<Proxy>> {
+        - realTranscriber : TranscriptionService
+        - cache : Map<String, Transcript>
+        - loggingEnabled : boolean
+        - totalRequests : int
+        - cacheHits : int
+        - apiCalls : int
+        --
+        + TranscriberProxy()
+        + TranscriberProxy(realTranscriber : TranscriptionService)
+        + TranscriberProxy(realTranscriber, loggingEnabled)
+        + transcribe(audioFile : Path) : Transcript
+        + clearCache() : void
+        + getCacheSize() : int
+        + getStats() : ProxyStats
+    }
+
+
+
+    class "TranscriberProxy.ProxyStats" as ProxyStats <<Record>> {
+        + totalRequests : int
+        + cacheHits : int
+        + apiCalls : int
+        + cacheHitRate() : double
+    }
+
+    class TranscriptionException {
+        + TranscriptionException(message : String)
+        + TranscriptionException(message, cause)
+    }
+
+    class Recorder {
+        + startRecording() : void
+        + stopRecording() : Path
+    }
+
+    class Summarizer {
+        + summarize(transcript : Transcript) : Summary
+        + extractActions(transcript : Transcript) : List<ActionItem>
+    }
 }
 
-package "EchoNote.Config" {
-    class OpenAiClientFactory
-}
+TranscriptionService <|.. Transcriber
+TranscriptionService <|.. TranscriberProxy
 
-Recorder --> TranscriptionException
+TranscriberProxy --> TranscriptionService : delegates to
+TranscriberProxy --> Transcript : caches
+TranscriberProxy +-- ProxyStats
 
-Transcriber --> Transcript
-Transcriber --> TranscriptSource
-Transcriber --> TranscriptionException
-Transcriber --> OpenAiClientFactory
+Transcriber --> Transcript : creates
+Transcriber --> TranscriptionException : throws
 
-Summarizer --> Transcript
-Summarizer --> Summary
-Summarizer --> ActionItem
-Summarizer --> Participant
-Summarizer --> ActionStatus
-Summarizer --> SummarizationException
-Summarizer --> OpenAiClientFactory
+Summarizer --> Transcript : reads
+Summarizer --> Summary : creates
+Summarizer --> ActionItem : extracts
+
+Recorder --> TranscriptionException : throws
+
+
 
 @enduml

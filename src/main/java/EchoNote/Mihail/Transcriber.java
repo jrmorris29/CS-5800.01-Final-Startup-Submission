@@ -12,7 +12,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 
-public class Transcriber {
+/**
+ * Proxy Pattern - RealSubject.
+ *
+ * The actual transcription service that calls the OpenAI Whisper API.
+ * This class performs the real work of transcribing audio files.
+ */
+public class Transcriber implements TranscriptionService {
 
     private static final String TRANSCRIPTION_URL = "https://api.openai.com/v1/audio/transcriptions";
     private static final MediaType MEDIA_TYPE_WAV = MediaType.parse("audio/wav");
@@ -31,6 +37,10 @@ public class Transcriber {
         this.apiKey = apiKey;
     }
 
+    @Override
+    public Transcript transcribe(Path audioFile) {
+        return transcribeFile(audioFile);
+    }
 
     public Transcript transcribeFile(Path wavFile) {
         if (wavFile == null || !Files.exists(wavFile)) {

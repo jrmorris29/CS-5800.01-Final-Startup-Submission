@@ -1,120 +1,115 @@
 @startuml
-title Mihail – Capture & Summarization Layer
+title Mihail - Recording, Transcription & Summarization with Proxy Pattern
 
 skinparam classAttributeIconSize 0
-skinparam shadowing false
-skinparam linetype ortho
-skinparam wrapWidth 200
 
-' ===== Owned by Mihail =====
-class Recorder {
-  -stream: AudioStream
-  -permissionGranted: boolean
-  --
-  +requestPermissions(): boolean
-  +begin(tabId: String): void
-  +end(): AudioFile
-  +isRecording(): boolean
+note as N1
+  **Proxy Pattern:**
+  TranscriberProxy adds caching,
+  logging, and statistics.
+end note
+
+package "EchoNote.Jack" {
+    class Transcript {
+        - id : String
+        - rawText : String
+        - source : TranscriptSource
+    }
+
+    class Summary {
+        - id : String
+        - topics : List<String>
+        - decisions : List<String>
+        - notes : String
+    }
+
+    class ActionItem {
+        - id : String
+        - description : String
+        - owner : Participant
+        - dueDate : LocalDate
+    }
 }
 
-interface Transcriber {
-  +transcribe(audio: AudioFile): Transcript
-  +parse(file: File): Transcript
+package "EchoNote.Mihail" {
+
+    interface TranscriptionService <<Subject>> {
+        + transcribe(audioFile : Path) : Transcript
+    }
+
+
+
+    class Transcriber <<RealSubject>> {
+        - httpClient : OkHttpClient
+        - objectMapper : ObjectMapper
+        - apiKey : String
+        --
+        + Transcriber()
+        + Transcriber(apiKey : String)
+        + transcribe(audioFile : Path) : Transcript
+        + transcribeFile(wavFile : Path) : Transcript
+    }
+
+
+
+    class TranscriberProxy <<Proxy>> {
+        - realTranscriber : TranscriptionService
+        - cache : Map<String, Transcript>
+        - loggingEnabled : boolean
+        - totalRequests : int
+        - cacheHits : int
+        - apiCalls : int
+        --
+        + TranscriberProxy()
+        + TranscriberProxy(realTranscriber : TranscriptionService)
+        + TranscriberProxy(realTranscriber, loggingEnabled)
+        + transcribe(audioFile : Path) : Transcript
+        + clearCache() : void
+        + getCacheSize() : int
+        + getStats() : ProxyStats
+    }
+
+
+
+    class "TranscriberProxy.ProxyStats" as ProxyStats <<Record>> {
+        + totalRequests : int
+        + cacheHits : int
+        + apiCalls : int
+        + cacheHitRate() : double
+    }
+
+    class TranscriptionException {
+        + TranscriptionException(message : String)
+        + TranscriptionException(message, cause)
+    }
+
+    class Recorder {
+        + startRecording() : void
+        + stopRecording() : Path
+    }
+
+    class Summarizer {
+        + summarize(transcript : Transcript) : Summary
+        + extractActions(transcript : Transcript) : List<ActionItem>
+    }
 }
 
-class SpeechToTextService implements Transcriber {
-  +transcribe(audio: AudioFile): Transcript
-  +parse(file: File): Transcript
-}
+TranscriptionService <|.. Transcriber
+TranscriptionService <|.. TranscriberProxy
 
-interface Summarizer {
-  +summarize(t: Transcript): Summary
-  +extractActions(t: Transcript): List<ActionItem>
-}
+TranscriberProxy --> TranscriptionService : delegates to
+TranscriberProxy --> Transcript : caches
+TranscriberProxy +-- ProxyStats
 
-class LLMService implements Summarizer {
-  +summarize(t: Transcript): Summary
-  +extractActions(t: Transcript): List<ActionItem>
-}
+Transcriber --> Transcript : creates
+Transcriber --> TranscriptionException : throws
 
-' === Proxy pattern ===
-class SummarizerProxy implements Summarizer {
-  -real: Summarizer
-  -summaryCache: Map<UUID, Summary>
-  -actionsCache: Map<UUID, List<ActionItem>>
-  --
-  +SummarizerProxy(real: Summarizer)
-  +summarize(t: Transcript): Summary
-  +extractActions(t: Transcript): List<ActionItem>
-}
+Summarizer --> Transcript : reads
+Summarizer --> Summary : creates
+Summarizer --> ActionItem : extracts
 
-' ===== Shared domain types for context =====
-class Transcript {
-  +id: UUID
-  +rawText: Text
-  +timestamps: List<Timestamp>
-  +source: TranscriptSource
-}
+Recorder --> TranscriptionException : throws
 
-class Summary {
-  +id: UUID
-  +topics: List<String>
-  +decisions: List<String>
-  +notes: Text
-}
 
-class ActionItem {
-  +id: UUID
-  +title: String
-  +owner: Participant
-  +dueDate: LocalDate
-  +status: ActionStatus
-}
-
-class Participant {
-  +name: String
-  +email: String
-  +role: String
-}
-
-class AudioFile {
-  +path: String
-  +durationSec: int
-}
-
-class AudioStream
-
-class Timestamp {
-  +start: Time
-  +end: Time
-}
-
-class Time
-
-enum TranscriptSource {
-  LIVE
-  IMPORTED
-}
-
-enum ActionStatus {
-  OPEN
-  DONE
-}
-
-' ===== Relationships =====
-Recorder --> AudioStream : manages >
-Recorder --> AudioFile : produces >
-
-SpeechToTextService --> Transcript : returns
-Transcriber --> Transcript : returns
-
-Summarizer <|.. LLMService
-Summarizer <|.. SummarizerProxy
-SummarizerProxy o-- Summarizer : wraps/delegates
-
-Summarizer --> Summary : returns
-Summarizer --> ActionItem : returns *
-
-ActionItem o-- "0..1" Participant : owner
 
 @enduml

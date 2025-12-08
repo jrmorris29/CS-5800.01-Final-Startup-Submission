@@ -1,108 +1,40 @@
 @startuml
-title Arpit – Export, Search & Notification Services
+title Arpit - Export, Search, Notify
 
-skinparam classAttributeIconSize 0
-skinparam shadowing false
-skinparam linetype ortho
-skinparam wrapWidth 200
-
-' ===== Owned by Arpit =====
-interface Exporter {
-  +export(rec: MeetingRecord, fmt: ExportFormat, dest: ExportDestination): ExportResult
+package "EchoNote.Jack" {
+    class MeetingRecord
+    class Workspace
+    class Participant
+    class Summary
+    class ActionItem
+    class ExportResult
 }
 
-class ExportService implements Exporter {
-  +export(rec: MeetingRecord, fmt: ExportFormat, dest: ExportDestination): ExportResult
+package "EchoNote.Arpit" {
+    class ExportService
+    class SearchService
+    interface Notifier
+    class EmailNotifier
+    class NotificationException
+    class UnsupportedExportException
 }
 
-class SearchService {
-  +index(rec: MeetingRecord): void
-  +search(q: String): List<MeetingRecord>
-}
+SearchService --> Workspace
+SearchService --> MeetingRecord
 
-interface Notifier {
-  +emailParticipants(rec: MeetingRecord, eventId: String): void
-}
+ExportService --> MeetingRecord
+ExportService --> ExportResult
+ExportService --> Summary
+ExportService --> ActionItem
+ExportService --> UnsupportedExportException
 
-class EmailNotifier implements Notifier {
-  +emailParticipants(rec: MeetingRecord, eventId: String): void
-}
+Notifier --> MeetingRecord
 
-' ===== Shared domain types for context =====
-class Workspace {
-  +records: List<MeetingRecord>
-  --
-  +save(rec: MeetingRecord): void
-  +findByQuery(q: String): List<MeetingRecord>
-  +get(id: UUID): MeetingRecord
-}
-
-class MeetingRecord {
-  +id: UUID
-  +title: String
-  +tags: List<String>
-  +date: LocalDateTime
-  +status: ApprovalStatus
-  +participants: List<Participant>
-  +transcript: Transcript
-  +summary: Summary
-  +actions: List<ActionItem>
-}
-
-class Participant {
-  +name: String
-  +email: String
-  +role: String
-}
-
-class Transcript
-class Summary
-class ActionItem
-
-enum ExportFormat {
-  GOOGLE_DOC
-  MARKDOWN
-  CLIPBOARD
-  EMAIL
-}
-
-enum ExportDestination {
-  DRIVE
-  FILE
-  CLIPBOARD
-  MAIL
-}
-
-class ExportResult {
-  +success: boolean
-  +link: String
-  +message: String
-}
-
-enum ApprovalStatus {
-  DRAFT
-  APPROVED
-}
-
-' ===== Relationships =====
-Workspace o-- "0..*" MeetingRecord : stores
-
-ExportService ..> MeetingRecord : reads
-ExportService ..> ExportResult : returns
-ExportService ..> ExportFormat
-ExportService ..> ExportDestination
-Exporter <|.. ExportService
-
-SearchService ..> Workspace : uses
-SearchService ..> MeetingRecord : returns *
-
-Notifier <|.. EmailNotifier
-EmailNotifier ..> MeetingRecord : reads
-EmailNotifier ..> Participant : addresses
-
-MeetingRecord o-- "0..*" Participant
-MeetingRecord *-- Transcript
-MeetingRecord *-- Summary
-MeetingRecord *-- "0..*" ActionItem
+EmailNotifier ..|> Notifier
+EmailNotifier --> MeetingRecord
+EmailNotifier --> Participant
+EmailNotifier --> Summary
+EmailNotifier --> ActionItem
+EmailNotifier --> NotificationException
 
 @enduml

@@ -1,18 +1,130 @@
 @startuml
-title Jack - Core Domain and Builder
+title Jack - Core Domain with Builder & Iterator Patterns
+
+skinparam classAttributeIconSize 0
+
+note as N1
+  **Design Patterns:**
+  1. Builder - MeetingRecordBuilder
+  2. Iterator - MeetingRecordIterator
+end note
 
 package "EchoNote.Jack" {
-    class Workspace
-    class MeetingRecord
-    class MeetingRecordBuilder
-    class Participant
-    class Transcript
-    class Summary
-    class ActionItem
 
-    enum TranscriptSource
-    enum ApprovalStatus
-    enum ActionStatus
+    ' Builder Pattern
+    class MeetingRecordBuilder <<Builder>> {
+        - record : MeetingRecord
+        - tags : List<String>
+        - participants : List<Participant>
+        - actions : List<ActionItem>
+        --
+        + MeetingRecordBuilder()
+        + withTitle(title : String) : MeetingRecordBuilder
+        + withTags(tags : List<String>) : MeetingRecordBuilder
+        + withDate(date : LocalDateTime) : MeetingRecordBuilder
+        + withParticipants(participants : List<Participant>) : MeetingRecordBuilder
+        + withTranscript(transcript : Transcript) : MeetingRecordBuilder
+        + withSummary(summary : Summary) : MeetingRecordBuilder
+        + withActions(actions : List<ActionItem>) : MeetingRecordBuilder
+        + build() : MeetingRecord
+    }
+
+    ' Iterator Pattern
+    class MeetingRecordCollection <<Aggregate>> {
+        - records : List<MeetingRecord>
+        --
+        + add(record : MeetingRecord) : void
+        + size() : int
+        + iterator() : Iterator<MeetingRecord>
+        + approvedIterator() : Iterator<MeetingRecord>
+        + iteratorByTag(tag : String) : Iterator<MeetingRecord>
+        + iteratorByTitle(searchTerm : String) : Iterator<MeetingRecord>
+        + iteratorWithFilter(filter : Predicate) : Iterator<MeetingRecord>
+    }
+
+    class MeetingRecordIterator <<Iterator>> {
+        - records : List<MeetingRecord>
+        - filter : Predicate<MeetingRecord>
+        - currentIndex : int
+        --
+        + hasNext() : boolean
+        + next() : MeetingRecord
+        + {static} approvedOnly(records) : MeetingRecordIterator
+        + {static} byTag(records, tag) : MeetingRecordIterator
+        + {static} byTitleContaining(records, term) : MeetingRecordIterator
+    }
+
+    ' Core Domain
+    class Workspace {
+        - records : List<MeetingRecord>
+        --
+        + save(record : MeetingRecord) : void
+        + findByQuery(query : String) : List<MeetingRecord>
+        + getById(id : UUID) : MeetingRecord
+        + getAll() : List<MeetingRecord>
+    }
+
+    class MeetingRecord <<Product>> {
+        - id : UUID
+        - title : String
+        - tags : List<String>
+        - date : LocalDateTime
+        - status : ApprovalStatus
+        - participants : List<Participant>
+        - transcript : Transcript
+        - summary : Summary
+        - actions : List<ActionItem>
+        --
+        + getId() : UUID
+        + getTitle() : String
+        + isApproved() : boolean
+    }
+
+    class Participant {
+        - name : String
+        - email : String
+        - role : String
+    }
+
+    class Transcript {
+        - id : String
+        - rawText : String
+        - timestamps : List<String>
+        - source : TranscriptSource
+    }
+
+    class Summary {
+        - id : String
+        - topics : List<String>
+        - decisions : List<String>
+        - notes : String
+    }
+
+    class ActionItem {
+        - id : String
+        - description : String
+        - owner : Participant
+        - dueDate : LocalDate
+        - status : ActionStatus
+    }
+
+    enum ApprovalStatus {
+        DRAFT
+        PENDING
+        APPROVED
+        REJECTED
+    }
+
+    enum TranscriptSource {
+        LIVE
+        IMPORTED
+    }
+
+    enum ActionStatus {
+        OPEN
+        IN_PROGRESS
+        COMPLETED
+    }
 
     enum ExportFormat
     enum ExportDestination
@@ -22,13 +134,26 @@ package "EchoNote.Jack" {
     class RecordNotFoundException
 }
 
-Workspace "1" o-- "*" MeetingRecord
+' Builder
+MeetingRecordBuilder --> MeetingRecord : <<builds>>
+MeetingRecordBuilder ..> Participant : uses
+MeetingRecordBuilder ..> Transcript : uses
+MeetingRecordBuilder ..> Summary : uses
+MeetingRecordBuilder ..> ActionItem : uses
 
+' Iterator
+MeetingRecordCollection ..|> java.lang.Iterable
+MeetingRecordCollection --> MeetingRecordIterator : <<creates>>
+MeetingRecordCollection o-- "*" MeetingRecord
+MeetingRecordIterator ..|> java.util.Iterator
+MeetingRecordIterator --> MeetingRecord : <<traverses>>
+
+' Domain
+Workspace "1" o-- "*" MeetingRecord
 MeetingRecord "1" o-- "*" Participant
 MeetingRecord "1" o-- "*" ActionItem
 MeetingRecord "1" o-- "0..1" Transcript
 MeetingRecord "1" o-- "0..1" Summary
-
 MeetingRecord --> ApprovalStatus
 Transcript --> TranscriptSource
 ActionItem --> ActionStatus
@@ -37,14 +162,5 @@ ActionItem --> Participant
 ExportResult --> MeetingRecord
 ExportResult --> ExportFormat
 ExportResult --> ExportDestination
-
-InvalidEmailException --> Participant
-RecordNotFoundException --> Workspace
-
-MeetingRecordBuilder --> MeetingRecord
-MeetingRecordBuilder --> Participant
-MeetingRecordBuilder --> ActionItem
-MeetingRecordBuilder --> Transcript
-MeetingRecordBuilder --> Summary
 
 @enduml

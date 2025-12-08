@@ -1,235 +1,158 @@
 @startuml
-title Meeting Summarizer – Class UML (Refactored with Design Patterns)
+title EchoNote - Overall Architecture with Design Patterns
 
 skinparam classAttributeIconSize 0
-skinparam shadowing false
-skinparam linetype ortho
-skinparam wrapWidth 200
 
-' ===== Core Domain =====
-class User {
-  +userId: UUID
-  +name: String
-  +email: String
-  --
-  +startCapture(): void
-  +stopCapture(): void
-  +importTranscript(file: File): void
-  +requestSummary(): void
-  +requestActionItems(): void
-  +approveResults(): void
-  +export(format: ExportFormat, dest: ExportDestination): void
-  +saveToWorkspace(title: String, tags: List< String >): MeetingRecord
-  +search(query: String): List< MeetingRecord >
-  +toggleAutoSend(eventId: String, enabled: boolean): void
+note as DesignPatterns
+  **Design Patterns:**
+  1. Singleton + Factory - OpenAiClientFactory
+  2. Builder - MeetingRecordBuilder
+  3. Iterator - MeetingRecordIterator
+  4. Proxy - TranscriberProxy
+end note
+
+package "EchoNote.App" {
+    class AppMain
+    class AppConfig
+    class SwingUI
 }
 
-class SystemController {
-  +startCapture(): void
-  +stopCapture(): Transcript
-  +importTranscript(file: File): Transcript
-  +createRecordBuilder(): MeetingRecordBuilder
-  +generateSummary(t: Transcript): Summary
-  +extractActions(t: Transcript): List< ActionItem >
-  +approveResults(rec: MeetingRecord): void
-  +saveRecord(rec: MeetingRecord): void
-  +search(q: String): List< MeetingRecord >
-  +export(rec: MeetingRecord, fmt: ExportFormat, dest: ExportDestination): ExportResult
-  +autoSend(rec: MeetingRecord, eventId: String): void
+package "EchoNote.Config" {
+    class OpenAiClientFactory <<Singleton, Factory>> {
+        - {static} CLIENT : OpenAIClient
+        --
+        - {static} createClient() : OpenAIClient
+        + {static} getClient() : OpenAIClient
+    }
 }
 
-class Recorder {
-  -stream: AudioStream
-  -permissionGranted: boolean
-  --
-  +requestPermissions(): boolean
-  +begin(tabId: String): void
-  +end(): AudioFile
-  +isRecording(): boolean
+package "EchoNote.Jack" {
+    class Workspace
+    class MeetingRecord
+    class MeetingRecordBuilder <<Builder>>
+    class MeetingRecordCollection <<Aggregate>>
+    class MeetingRecordIterator <<Iterator>>
+    class Participant
+    class Transcript
+    class Summary
+    class ActionItem
+
+    enum TranscriptSource
+    enum ApprovalStatus
+    enum ActionStatus
+
+    enum ExportFormat
+    enum ExportDestination
+    class ExportResult
+
+    class InvalidEmailException
+    class RecordNotFoundException
 }
 
-interface Transcriber {
-  +transcribe(audio: AudioFile): Transcript
-  +parse(file: File): Transcript
-}
-class SpeechToTextService implements Transcriber
-
-interface Summarizer {
-  +summarize(t: Transcript): Summary
-  +extractActions(t: Transcript): List< ActionItem >
-}
-class LLMService implements Summarizer
-
-' === Proxy pattern: SummarizerProxy ===
-class SummarizerProxy implements Summarizer {
-  -real: Summarizer
-  -cache: Map< UUID, Summary >
-  --
-  +summarize(t: Transcript): Summary
-  +extractActions(t: Transcript): List< ActionItem >
+package "EchoNote.Mihail" {
+    class Recorder
+    interface TranscriptionService <<Subject>>
+    class Transcriber <<RealSubject>>
+    class TranscriberProxy <<Proxy>>
+    class Summarizer
+    class TranscriptionException
+    class SummarizationException
 }
 
-class Transcript {
-  +id: UUID
-  +rawText: Text
-  +timestamps: List< Timestamp >
-  +source: TranscriptSource
-  --
-  +segmentAt(time: Time): String
+package "EchoNote.Arpit" {
+    class ExportService
+    class SearchService
+    interface Notifier
+    class EmailNotifier
+    class NotificationException
+    class UnsupportedExportException
 }
 
-class Summary {
-  +id: UUID
-  +topics: List< String >
-  +decisions: List< String >
-  +notes: Text
-}
+AppMain --> AppConfig
+AppMain --> SwingUI
 
-class ActionItem {
-  +id: UUID
-  +title: String
-  +owner: Participant
-  +dueDate: LocalDate
-  +status: ActionStatus
-}
+AppConfig --> Workspace
+AppConfig --> Transcriber
+AppConfig --> Summarizer
+AppConfig --> ExportService
+AppConfig --> SearchService
+AppConfig --> EmailNotifier
 
-class MeetingRecord {
-  +id: UUID
-  +title: String
-  +tags: List< String >
-  +date: LocalDateTime
-  +status: ApprovalStatus
-  +participants: List< Participant >
-  --
-  +setTranscript(t: Transcript): void
-  +setSummary(s: Summary): void
-  +setActions(a: List< ActionItem >): void
-}
+SwingUI --> Workspace
+SwingUI --> Transcriber
+SwingUI --> Summarizer
+SwingUI --> ExportService
+SwingUI --> SearchService
+SwingUI --> EmailNotifier
+SwingUI --> Recorder
 
-' === Builder pattern: MeetingRecordBuilder ===
-class MeetingRecordBuilder {
-  -record: MeetingRecord
-  --
-  +withTitle(title: String): MeetingRecordBuilder
-  +withTags(tags: List< String >): MeetingRecordBuilder
-  +withDate(date: LocalDateTime): MeetingRecordBuilder
-  +withParticipants(p: List< Participant >): MeetingRecordBuilder
-  +withTranscript(t: Transcript): MeetingRecordBuilder
-  +withSummary(s: Summary): MeetingRecordBuilder
-  +withActions(a: List< ActionItem >): MeetingRecordBuilder
-  +build(): MeetingRecord
-}
+OpenAiClientFactory --> Transcriber
+OpenAiClientFactory --> Summarizer
 
-class Participant {
-  +name: String
-  +email: String
-  +role: String
-}
+Workspace "1" o-- "*" MeetingRecord
 
-' ===== Supporting Services =====
-class Workspace {
-  +records: List< MeetingRecord >
-  --
-  +save(rec: MeetingRecord): void
-  +findByQuery(q: String): List< MeetingRecord >
-  +get(id: UUID): MeetingRecord
-}
+MeetingRecord "1" o-- "*" Participant
+MeetingRecord "1" o-- "*" ActionItem
+MeetingRecord "1" o-- "0..1" Transcript
+MeetingRecord "1" o-- "0..1" Summary
 
-interface Exporter {
-  +export(rec: MeetingRecord, fmt: ExportFormat, dest: ExportDestination): ExportResult
-}
-class ExportService implements Exporter
+MeetingRecord --> ApprovalStatus
+Transcript --> TranscriptSource
+ActionItem --> ActionStatus
+ActionItem --> Participant
 
-class SearchService {
-  +index(rec: MeetingRecord): void
-  +search(q: String): List< MeetingRecord >
-}
+MeetingRecordBuilder --> MeetingRecord
+MeetingRecordBuilder --> Participant
+MeetingRecordBuilder --> ActionItem
+MeetingRecordBuilder --> Transcript
+MeetingRecordBuilder --> Summary
 
-interface Notifier {
-  +emailParticipants(rec: MeetingRecord, eventId: String): void
-}
-class EmailNotifier implements Notifier
+ExportResult --> MeetingRecord
+ExportResult --> ExportFormat
+ExportResult --> ExportDestination
 
-' ===== Enums / Value Objects =====
-enum TranscriptSource {
-  LIVE
-  IMPORTED
-}
+InvalidEmailException --> Participant
+RecordNotFoundException --> Workspace
 
-enum ApprovalStatus {
-  DRAFT
-  APPROVED
-}
+Recorder --> TranscriptionException
 
-enum ActionStatus {
-  OPEN
-  DONE
-}
+' Iterator Pattern
+MeetingRecordCollection o-- "*" MeetingRecord
+MeetingRecordCollection --> MeetingRecordIterator : creates
+MeetingRecordIterator --> MeetingRecord : traverses
 
-enum ExportFormat {
-  GOOGLE_DOC
-  MARKDOWN
-  CLIPBOARD
-  EMAIL
-}
+' Proxy Pattern
+TranscriptionService <|.. Transcriber
+TranscriptionService <|.. TranscriberProxy
+TranscriberProxy --> TranscriptionService : delegates to
 
-enum ExportDestination {
-  DRIVE
-  FILE
-  CLIPBOARD
-  MAIL
-}
+Transcriber --> Transcript
+Transcriber --> TranscriptSource
+Transcriber --> TranscriptionException
 
-class ExportResult {
-  +success: boolean
-  +link: String
-  +message: String
-}
+Summarizer --> Transcript
+Summarizer --> Summary
+Summarizer --> ActionItem
+Summarizer --> Participant
+Summarizer --> ActionStatus
+Summarizer --> SummarizationException
 
-class AudioFile {
-  +path: String
-  +durationSec: int
-}
+SearchService --> Workspace
+SearchService --> MeetingRecord
 
-class AudioStream
+ExportService --> MeetingRecord
+ExportService --> ExportResult
+ExportService --> Summary
+ExportService --> ActionItem
+ExportService --> UnsupportedExportException
 
-class Timestamp {
-  +start: Time
-  +end: Time
-}
+Notifier --> MeetingRecord
 
-class Time
-
-' ===== Relationships =====
-User --> SystemController : «uses»
-SystemController ..> Recorder : «controls»
-SystemController ..> Transcriber : «uses»
-SystemController ..> SummarizerProxy : «uses proxy»
-SystemController ..> Workspace : «saves/loads»
-SystemController ..> Exporter : «uses»
-SystemController ..> Notifier : «uses»
-SystemController ..> SearchService : «queries»
-SystemController ..> MeetingRecordBuilder : «creates builder»
-
-Recorder --> AudioStream : manages >
-Recorder --> AudioFile : produces >
-
-Transcriber --> Transcript : returns
-Summarizer --> Summary : returns
-Summarizer --> ActionItem : returns *
-SummarizerProxy o-- Summarizer : «wraps/delegates»
-
-Workspace o-- "0..*" MeetingRecord : stores
-SearchService ..> Workspace : indexes from
-MeetingRecord *-- "1" Transcript
-MeetingRecord *-- "1" Summary
-MeetingRecord *-- "0..*" ActionItem
-MeetingRecord o-- "0..*" Participant
-
-MeetingRecordBuilder --> MeetingRecord : «builds»
-
-ActionItem o-- "0..1" Participant : owner
-
-User o-- "0..*" MeetingRecord : views
+EmailNotifier ..|> Notifier
+EmailNotifier --> MeetingRecord
+EmailNotifier --> Participant
+EmailNotifier --> Summary
+EmailNotifier --> ActionItem
+EmailNotifier --> NotificationException
 
 @enduml
