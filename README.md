@@ -46,15 +46,16 @@ EchoNote.App.AppMain
 
 Design Pattern Implementation:
 
-1	Singleton	OpenAiClientFactory - single static instance
+### Design Pattern Implementation
 
-2	Factory	OpenAiClientFactory - encapsulates client creation
+| # | Pattern    | Implementation |
+|---|------------|----------------|
+| 1 | **Singleton** | `OpenAiClientFactory` – single static instance |
+| 2 | **Factory**   | `OpenAiClientFactory` – encapsulates client creation |
+| 3 | **Builder**   | `MeetingRecordBuilder` – fluent API construction |
+| 4 | **Iterator**  | `MeetingRecordIterator` + `MeetingRecordCollection` |
+| 5 | **Proxy**     | `TranscriberProxy` – caching proxy for Transcriber |
 
-3	Builder	MeetingRecordBuilder - fluent API construction
-
-4	Iterator	MeetingRecordIterator + MeetingRecordCollection
-
-5	Proxy	TranscriberProxy - caching proxy for Transcriber
 
 Github Commit(s): https://github.com/jrmorris29/CS-5800.01-Final-Startup-Submission/commit/7c76814a5f214d3f41ccc7baf23a237f90cc78cc
 
