@@ -20,7 +20,9 @@ December 12, 2025
 1. **Clone the repository**
 
 bash
+
 git clone https://github.com/jrmorris29/CS-5800.01-Final-Startup-Submission.git
+
 cd CS-5800.01-Final-Startup-Submission
 
 
