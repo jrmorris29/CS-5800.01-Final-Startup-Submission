@@ -42,11 +42,11 @@ EchoNote.App.AppMain
 
 
 
-## Part 1
+# Part 1
 
 Design Patterns:
 
-#	Pattern	Implementation
+##	Pattern	Implementation
 1	Singleton	OpenAiClientFactory - single static instance
 2	Factory	OpenAiClientFactory - encapsulates client creation
 3	Builder	MeetingRecordBuilder - fluent API construction
