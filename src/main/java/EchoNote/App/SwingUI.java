@@ -1,6 +1,5 @@
 package EchoNote.App;
 
-import EchoNote.Arpit.EmailNotifier;
 import EchoNote.Arpit.ExportService;
 import EchoNote.Arpit.SearchService;
 import EchoNote.Jack.ActionItem;
@@ -9,6 +8,8 @@ import EchoNote.Jack.MeetingRecord;
 import EchoNote.Jack.Summary;
 import EchoNote.Jack.Transcript;
 import EchoNote.Jack.Workspace;
+import EchoNote.Mihail.EmailDraftException;
+import EchoNote.Mihail.EmailDraftService;
 import EchoNote.Mihail.Recorder;
 import EchoNote.Mihail.Summarizer;
 import EchoNote.Mihail.Transcriber;
@@ -30,7 +31,7 @@ public class SwingUI extends JFrame {
     private final Summarizer summarizer;
     private final ExportService exportService;
     private final SearchService searchService;
-    private final EmailNotifier emailNotifier;
+    private final EmailDraftService emailDraftService;
     private final Recorder recorder;
 
     private final DefaultListModel<MeetingRecord> meetingListModel = new DefaultListModel<>();
@@ -47,7 +48,7 @@ public class SwingUI extends JFrame {
         this.summarizer = config.getSummarizer();
         this.exportService = config.getExportService();
         this.searchService = config.getSearchService();
-        this.emailNotifier = config.getEmailNotifier();
+        this.emailDraftService = config.getEmailDraftService();
         this.recorder = new Recorder();
 
         initLayout();
@@ -368,11 +369,23 @@ public class SwingUI extends JFrame {
             return;
         }
 
+        // Prompt user for recipient email
+        String recipientEmail = JOptionPane.showInputDialog(
+                this,
+                "Enter recipient email address:",
+                "Email Meeting Summary",
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (recipientEmail == null || recipientEmail.isBlank()) {
+            return; // User cancelled or empty input
+        }
+
         try {
-            emailNotifier.emailParticipants(record, "demo-event");
-            setStatus("Emails sent.");
-        } catch (Exception ex) {
-            showError("Failed to send emails: " + ex.getMessage());
+            emailDraftService.openEmailDraft(record, recipientEmail.trim());
+            setStatus("Email draft opened in default mail client.");
+        } catch (EmailDraftException ex) {
+            showError("Failed to open email draft: " + ex.getMessage());
         }
     }
 

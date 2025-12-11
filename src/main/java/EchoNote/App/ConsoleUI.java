@@ -1,6 +1,5 @@
 package EchoNote.App;
 
-import EchoNote.Arpit.EmailNotifier;
 import EchoNote.Arpit.ExportService;
 import EchoNote.Arpit.SearchService;
 import EchoNote.Jack.ActionItem;
@@ -10,6 +9,8 @@ import EchoNote.Jack.RecordNotFoundException;
 import EchoNote.Jack.Summary;
 import EchoNote.Jack.Transcript;
 import EchoNote.Jack.Workspace;
+import EchoNote.Mihail.EmailDraftException;
+import EchoNote.Mihail.EmailDraftService;
 import EchoNote.Mihail.Recorder;
 import EchoNote.Mihail.Summarizer;
 import EchoNote.Mihail.Transcriber;
@@ -29,7 +30,7 @@ public class ConsoleUI {
     private final Summarizer summarizer;
     private final ExportService exportService;
     private final SearchService searchService;
-    private final EmailNotifier emailNotifier;
+    private final EmailDraftService emailDraftService;
     private final Recorder recorder;
 
     private final Scanner scanner = new Scanner(System.in);
@@ -40,7 +41,7 @@ public class ConsoleUI {
         this.summarizer = config.getSummarizer();
         this.exportService = config.getExportService();
         this.searchService = config.getSearchService();
-        this.emailNotifier = config.getEmailNotifier();
+        this.emailDraftService = config.getEmailDraftService();
         this.recorder = new Recorder();
     }
 
@@ -219,11 +220,18 @@ public class ConsoleUI {
             return;
         }
 
+        System.out.print("Enter recipient email address: ");
+        String recipientEmail = scanner.nextLine().trim();
+        if (recipientEmail.isBlank()) {
+            System.out.println("Email address cannot be blank.");
+            return;
+        }
+
         try {
-            emailNotifier.emailParticipants(record, "demo-event");
-            System.out.println("Emails sent.");
-        } catch (Exception e) {
-            System.out.println("Failed to send emails: " + e.getMessage());
+            emailDraftService.openEmailDraft(record, recipientEmail);
+            System.out.println("Email draft opened in default mail client.");
+        } catch (EmailDraftException e) {
+            System.out.println("Failed to open email draft: " + e.getMessage());
         }
     }
 
