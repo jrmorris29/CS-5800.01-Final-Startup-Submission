@@ -9,12 +9,19 @@ note as DesignPatterns
   2. Builder - MeetingRecordBuilder
   3. Iterator - MeetingRecordIterator
   4. Proxy - TranscriberProxy
+  5. Strategy - MeetingExporter
+
+  **Features:**
+  - Persistent Meeting History (Jack)
+  - Multi-Format Export (Arpit)
+  - Email Draft Flow (Mihail)
 end note
 
 package "EchoNote.App" {
     class AppMain
     class AppConfig
     class SwingUI
+    class ConsoleUI
 }
 
 package "EchoNote.Config" {
@@ -37,6 +44,11 @@ package "EchoNote.Jack" {
     class Summary
     class ActionItem
 
+    ' Persistence Feature
+    class MeetingStorage
+    class MeetingRecordDto
+    class StorageException
+
     enum TranscriptSource
     enum ApprovalStatus
     enum ActionStatus
@@ -57,10 +69,19 @@ package "EchoNote.Mihail" {
     class Summarizer
     class TranscriptionException
     class SummarizationException
+
+    ' Email Draft Flow Feature
+    class EmailDraftService
+    class EmailDraftException
 }
 
 package "EchoNote.Arpit" {
-    class ExportService
+    ' Strategy Pattern for Export
+    interface MeetingExporter <<Strategy>>
+    class MarkdownExporter <<ConcreteStrategy>>
+    class HtmlExporter <<ConcreteStrategy>>
+    class ExportService <<Context>>
+
     class SearchService
     interface Notifier
     class EmailNotifier
@@ -72,22 +93,34 @@ AppMain --> AppConfig
 AppMain --> SwingUI
 
 AppConfig --> Workspace
+AppConfig --> MeetingStorage
 AppConfig --> Transcriber
 AppConfig --> Summarizer
 AppConfig --> ExportService
 AppConfig --> SearchService
-AppConfig --> EmailNotifier
+AppConfig --> EmailDraftService
 
 SwingUI --> Workspace
 SwingUI --> Transcriber
 SwingUI --> Summarizer
 SwingUI --> ExportService
 SwingUI --> SearchService
-SwingUI --> EmailNotifier
+SwingUI --> EmailDraftService
 SwingUI --> Recorder
+
+ConsoleUI --> Workspace
+ConsoleUI --> ExportService
+ConsoleUI --> SearchService
+ConsoleUI --> EmailDraftService
 
 OpenAiClientFactory --> Transcriber
 OpenAiClientFactory --> Summarizer
+
+' Persistence Feature
+Workspace --> MeetingStorage : uses
+MeetingStorage --> MeetingRecordDto : serializes
+MeetingStorage --> StorageException : throws
+MeetingRecordDto --> MeetingRecord : converts
 
 Workspace "1" o-- "*" MeetingRecord
 
@@ -137,6 +170,12 @@ Summarizer --> Participant
 Summarizer --> ActionStatus
 Summarizer --> SummarizationException
 
+' Strategy Pattern for Export
+MeetingExporter <|.. MarkdownExporter
+MeetingExporter <|.. HtmlExporter
+ExportService o-- "*" MeetingExporter : registers
+ExportService --> ExportFormat
+
 SearchService --> Workspace
 SearchService --> MeetingRecord
 
@@ -154,5 +193,12 @@ EmailNotifier --> Participant
 EmailNotifier --> Summary
 EmailNotifier --> ActionItem
 EmailNotifier --> NotificationException
+
+' Email Draft Flow Feature
+EmailDraftService --> MeetingRecord
+EmailDraftService --> Summary
+EmailDraftService --> ActionItem
+EmailDraftService --> InvalidEmailException
+EmailDraftService --> EmailDraftException
 
 @enduml

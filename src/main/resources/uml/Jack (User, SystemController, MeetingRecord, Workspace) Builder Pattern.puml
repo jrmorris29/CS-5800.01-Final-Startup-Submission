@@ -1,5 +1,5 @@
 @startuml
-title Jack - Core Domain with Builder & Iterator Patterns
+title Jack - Core Domain with Builder, Iterator & Persistence
 
 skinparam classAttributeIconSize 0
 
@@ -7,6 +7,10 @@ note as N1
   **Design Patterns:**
   1. Builder - MeetingRecordBuilder
   2. Iterator - MeetingRecordIterator
+
+  **Feature: Persistent Meeting History**
+  MeetingStorage provides JSON persistence
+  using Jackson for serialization.
 end note
 
 package "EchoNote.Jack" {
@@ -54,10 +58,47 @@ package "EchoNote.Jack" {
         + {static} byTitleContaining(records, term) : MeetingRecordIterator
     }
 
+    ' Persistence Feature
+    class MeetingStorage {
+        - storageFile : File
+        - objectMapper : ObjectMapper
+        --
+        + MeetingStorage()
+        + MeetingStorage(storageFile : File)
+        + save(records : List<MeetingRecord>) : void
+        + load() : List<MeetingRecord>
+        + clearHistory() : boolean
+        + hasStoredData() : boolean
+        + getStorageFile() : File
+    }
+
+    class MeetingRecordDto {
+        - id : UUID
+        - title : String
+        - tags : List<String>
+        - date : LocalDateTime
+        - status : ApprovalStatus
+        - participants : List<Participant>
+        - transcript : Transcript
+        - summary : Summary
+        - actions : List<ActionItem>
+        --
+        + {static} fromMeetingRecord(record : MeetingRecord) : MeetingRecordDto
+        + toMeetingRecord() : MeetingRecord
+    }
+
+    class StorageException {
+        + StorageException(message : String)
+        + StorageException(message : String, cause : Throwable)
+    }
+
     ' Core Domain
     class Workspace {
         - records : List<MeetingRecord>
+        - storage : MeetingStorage
         --
+        + Workspace()
+        + Workspace(storage : MeetingStorage)
         + save(record : MeetingRecord) : void
         + findByQuery(query : String) : List<MeetingRecord>
         + getById(id : UUID) : MeetingRecord
@@ -147,6 +188,16 @@ MeetingRecordCollection --> MeetingRecordIterator : <<creates>>
 MeetingRecordCollection o-- "*" MeetingRecord
 MeetingRecordIterator ..|> java.util.Iterator
 MeetingRecordIterator --> MeetingRecord : <<traverses>>
+
+' Persistence
+MeetingStorage --> MeetingRecordDto : serializes
+MeetingStorage --> StorageException : throws
+MeetingRecordDto --> MeetingRecord : <<converts>>
+MeetingRecordDto ..> Participant
+MeetingRecordDto ..> Transcript
+MeetingRecordDto ..> Summary
+MeetingRecordDto ..> ActionItem
+Workspace --> MeetingStorage : uses
 
 ' Domain
 Workspace "1" o-- "*" MeetingRecord

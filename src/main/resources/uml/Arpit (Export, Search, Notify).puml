@@ -1,5 +1,17 @@
 @startuml
-title Arpit - Export, Search, Notify
+title Arpit - Export (Strategy Pattern), Search, Notify
+
+skinparam classAttributeIconSize 0
+
+note as N1
+  **Design Pattern:**
+  Strategy - MeetingExporter interface
+  with MarkdownExporter & HtmlExporter
+
+  **Feature: Multi-Format Export**
+  Supports Markdown and HTML export
+  via pluggable exporter strategies.
+end note
 
 package "EchoNote.Jack" {
     class MeetingRecord
@@ -8,28 +20,92 @@ package "EchoNote.Jack" {
     class Summary
     class ActionItem
     class ExportResult
+    enum ExportFormat
 }
 
 package "EchoNote.Arpit" {
-    class ExportService
-    class SearchService
-    interface Notifier
-    class EmailNotifier
+
+    ' Strategy Pattern for Export
+    interface MeetingExporter <<Strategy>> {
+        + export(record : MeetingRecord) : ExportResult
+        + getFileExtension() : String
+    }
+
+    class MarkdownExporter <<ConcreteStrategy>> {
+        - exportDirectory : File
+        --
+        + MarkdownExporter(exportDirectory : File)
+        + export(record : MeetingRecord) : ExportResult
+        + getFileExtension() : String
+    }
+
+    class HtmlExporter <<ConcreteStrategy>> {
+        - exportDirectory : File
+        --
+        + HtmlExporter(exportDirectory : File)
+        + export(record : MeetingRecord) : ExportResult
+        + getFileExtension() : String
+    }
+
+    class ExportService <<Context>> {
+        - exportDirectory : File
+        - exporters : Map<ExportFormat, MeetingExporter>
+        --
+        + ExportService()
+        + ExportService(exportDirectory : File)
+        + export(record : MeetingRecord, format : ExportFormat) : ExportResult
+        + exportAsMarkdown(record : MeetingRecord) : ExportResult
+        + exportAsHtml(record : MeetingRecord) : ExportResult
+        + getSupportedFormats() : ExportFormat[]
+    }
+
+    class SearchService {
+        - workspace : Workspace
+        --
+        + SearchService(workspace : Workspace)
+        + search(query : String) : List<MeetingRecord>
+    }
+
+    interface Notifier {
+        + notify(record : MeetingRecord, event : String) : void
+    }
+
+    class EmailNotifier {
+        + emailParticipants(record : MeetingRecord, event : String) : void
+    }
+
     class NotificationException
     class UnsupportedExportException
 }
 
+' Strategy Pattern relationships
+MeetingExporter <|.. MarkdownExporter
+MeetingExporter <|.. HtmlExporter
+ExportService --> MeetingExporter : uses
+ExportService o-- "*" MeetingExporter : registers
+
+' Export dependencies
+ExportService --> ExportFormat
+ExportService --> MeetingRecord
+ExportService --> ExportResult
+ExportService --> UnsupportedExportException : throws
+
+MarkdownExporter --> MeetingRecord
+MarkdownExporter --> ExportResult
+MarkdownExporter --> Summary
+MarkdownExporter --> ActionItem
+
+HtmlExporter --> MeetingRecord
+HtmlExporter --> ExportResult
+HtmlExporter --> Summary
+HtmlExporter --> ActionItem
+
+' Search dependencies
 SearchService --> Workspace
 SearchService --> MeetingRecord
 
-ExportService --> MeetingRecord
-ExportService --> ExportResult
-ExportService --> Summary
-ExportService --> ActionItem
-ExportService --> UnsupportedExportException
-
+' Notification dependencies
 Notifier --> MeetingRecord
-
 EmailNotifier ..|> Notifier
 EmailNotifier --> MeetingRecord
 EmailNotifier --> Participant
