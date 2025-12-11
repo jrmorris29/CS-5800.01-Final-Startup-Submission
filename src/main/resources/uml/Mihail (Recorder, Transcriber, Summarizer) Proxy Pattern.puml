@@ -1,5 +1,5 @@
 @startuml
-title Mihail - Recording, Transcription & Summarization with Proxy Pattern
+title Mihail - Recording, Transcription, Summarization & Email Draft
 
 skinparam classAttributeIconSize 0
 
@@ -7,6 +7,10 @@ note as N1
   **Proxy Pattern:**
   TranscriberProxy adds caching,
   logging, and statistics.
+
+  **Feature: Email Draft Flow**
+  EmailDraftService opens default
+  mail client with meeting summary.
 end note
 
 package "EchoNote.Jack" {
@@ -29,6 +33,9 @@ package "EchoNote.Jack" {
         - owner : Participant
         - dueDate : LocalDate
     }
+
+    class MeetingRecord
+    class InvalidEmailException
 }
 
 package "EchoNote.Mihail" {
@@ -36,8 +43,6 @@ package "EchoNote.Mihail" {
     interface TranscriptionService <<Subject>> {
         + transcribe(audioFile : Path) : Transcript
     }
-
-
 
     class Transcriber <<RealSubject>> {
         - httpClient : OkHttpClient
@@ -49,8 +54,6 @@ package "EchoNote.Mihail" {
         + transcribe(audioFile : Path) : Transcript
         + transcribeFile(wavFile : Path) : Transcript
     }
-
-
 
     class TranscriberProxy <<Proxy>> {
         - realTranscriber : TranscriptionService
@@ -68,8 +71,6 @@ package "EchoNote.Mihail" {
         + getCacheSize() : int
         + getStats() : ProxyStats
     }
-
-
 
     class "TranscriberProxy.ProxyStats" as ProxyStats <<Record>> {
         + totalRequests : int
@@ -92,8 +93,30 @@ package "EchoNote.Mihail" {
         + summarize(transcript : Transcript) : Summary
         + extractActions(transcript : Transcript) : List<ActionItem>
     }
+
+    class SummarizationException {
+        + SummarizationException(message : String)
+        + SummarizationException(message, cause)
+    }
+
+    ' Email Draft Flow Feature
+    class EmailDraftService {
+        --
+        + EmailDraftService()
+        + openEmailDraft(record : MeetingRecord, recipientEmail : String) : void
+        + validateEmail(email : String) : void
+        - buildDraftSubject(record : MeetingRecord) : String
+        - buildDraftBody(record : MeetingRecord) : String
+        - openMailClient(to : String, subject : String, body : String) : void
+    }
+
+    class EmailDraftException {
+        + EmailDraftException(message : String)
+        + EmailDraftException(message : String, cause : Throwable)
+    }
 }
 
+' Proxy Pattern
 TranscriptionService <|.. Transcriber
 TranscriptionService <|.. TranscriberProxy
 
@@ -104,12 +127,19 @@ TranscriberProxy +-- ProxyStats
 Transcriber --> Transcript : creates
 Transcriber --> TranscriptionException : throws
 
+' Summarizer
 Summarizer --> Transcript : reads
 Summarizer --> Summary : creates
 Summarizer --> ActionItem : extracts
+Summarizer --> SummarizationException : throws
 
 Recorder --> TranscriptionException : throws
 
-
+' Email Draft Flow
+EmailDraftService --> MeetingRecord : reads
+EmailDraftService --> Summary : formats
+EmailDraftService --> ActionItem : formats
+EmailDraftService --> InvalidEmailException : throws
+EmailDraftService --> EmailDraftException : throws
 
 @enduml
