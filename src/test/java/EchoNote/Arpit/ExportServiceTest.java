@@ -1,6 +1,7 @@
 package EchoNote.Arpit;
 
 import EchoNote.Jack.ActionItem;
+import EchoNote.Jack.ExportFormat;
 import EchoNote.Jack.ExportResult;
 import EchoNote.Jack.MeetingRecord;
 import EchoNote.Jack.MeetingRecordBuilder;
@@ -70,5 +71,69 @@ public class ExportServiceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> service.exportAsMarkdown(null),
                 "Passing a null record to exportAsMarkdown should throw IllegalArgumentException");
+    }
+
+    @Test
+    void exportAsHtml_createsFileAndReturnsSuccess() throws Exception {
+        MeetingRecord record = createRichRecord();
+
+        Path tempDir = Files.createTempDirectory("echonote-export-test-html");
+        File exportDir = tempDir.toFile();
+
+        ExportService service = new ExportService(exportDir);
+        ExportResult result = service.exportAsHtml(record);
+
+        assertTrue(result.isSuccess(), "ExportResult should indicate success");
+        assertNotNull(result.getLink(), "ExportResult should contain a link/path to the file");
+
+        Path exportedPath = Path.of(result.getLink());
+        assertTrue(Files.exists(exportedPath), "Exported HTML file should exist on disk");
+        assertTrue(result.getLink().endsWith(".html"), "Exported file should have .html extension");
+
+        String content = Files.readString(exportedPath);
+        assertTrue(content.contains("<!DOCTYPE html>"),
+                "HTML should contain DOCTYPE declaration");
+        assertTrue(content.contains("<title>Meeting: Export Test Meeting</title>"),
+                "HTML should contain title tag with meeting title");
+        assertTrue(content.contains("Short summary of the meeting."),
+                "HTML should include the summary notes");
+    }
+
+    @Test
+    void export_withExportFormat_delegatesToCorrectExporter() throws Exception {
+        MeetingRecord record = createRichRecord();
+
+        Path tempDir = Files.createTempDirectory("echonote-export-test-format");
+        File exportDir = tempDir.toFile();
+
+        ExportService service = new ExportService(exportDir);
+
+        ExportResult mdResult = service.export(record, ExportFormat.MARKDOWN);
+        assertTrue(mdResult.isSuccess());
+        assertTrue(mdResult.getLink().endsWith(".md"));
+
+        ExportResult htmlResult = service.export(record, ExportFormat.HTML);
+        assertTrue(htmlResult.isSuccess());
+        assertTrue(htmlResult.getLink().endsWith(".html"));
+    }
+
+    @Test
+    void getSupportedFormats_returnsMarkdownAndHtml() {
+        ExportService service = new ExportService(new File("exports"));
+        ExportFormat[] formats = service.getSupportedFormats();
+
+        assertEquals(2, formats.length, "Should support 2 formats");
+        assertTrue(java.util.Arrays.asList(formats).contains(ExportFormat.MARKDOWN));
+        assertTrue(java.util.Arrays.asList(formats).contains(ExportFormat.HTML));
+    }
+
+    @Test
+    void export_unsupportedFormat_throwsUnsupportedExportException() {
+        MeetingRecord record = createRichRecord();
+        ExportService service = new ExportService(new File("exports"));
+
+        assertThrows(UnsupportedExportException.class,
+                () -> service.export(record, ExportFormat.GOOGLE_DOC),
+                "Unsupported format should throw UnsupportedExportException");
     }
 }

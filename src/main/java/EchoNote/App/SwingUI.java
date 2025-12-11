@@ -4,6 +4,7 @@ import EchoNote.Arpit.EmailNotifier;
 import EchoNote.Arpit.ExportService;
 import EchoNote.Arpit.SearchService;
 import EchoNote.Jack.ActionItem;
+import EchoNote.Jack.ExportFormat;
 import EchoNote.Jack.ExportResult;
 import EchoNote.Jack.MeetingRecord;
 import EchoNote.Jack.Summary;
@@ -349,7 +350,23 @@ public class SwingUI extends JFrame {
     }
 
     private void exportMeeting(MeetingRecord record) {
-        ExportResult result = exportService.exportAsMarkdown(record);
+        // Show format selection dialog
+        ExportFormat[] formats = exportService.getSupportedFormats();
+        ExportFormat selectedFormat = (ExportFormat) JOptionPane.showInputDialog(
+                this,
+                "Select export format:",
+                "Export Meeting",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                formats,
+                ExportFormat.MARKDOWN
+        );
+
+        if (selectedFormat == null) {
+            return; // User cancelled
+        }
+
+        ExportResult result = exportService.export(record, selectedFormat);
         if (result.isSuccess()) {
             setStatus("Exported to " + result.getLink());
             JOptionPane.showMessageDialog(this,
