@@ -9,7 +9,9 @@ public class OpenAiClientFactory {
     private static final OpenAIClient CLIENT = createClient();
 
     private static OpenAIClient createClient() {
-        Dotenv dotenv = Dotenv.load();
+        Dotenv dotenv = Dotenv.configure()
+                .directory(System.getProperty("user.dir"))
+                .load();
         String apiKey = dotenv.get("OPENAI_API_KEY");
 
         if (apiKey == null || apiKey.isBlank()) {

@@ -6,9 +6,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.example</groupId>
-    <artifactId>Project-Part-4-Implementation-and-Demo</artifactId>
+    <artifactId>CS-5800.01-Final-Startup-Submission</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>Project-Part-4-Implementation-and-Demo</name>
+    <name>CS-5800.01-Final-Startup-Submission</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -66,6 +66,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+            <version>2.17.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
             <version>2.17.1</version>
         </dependency>
 

@@ -86,7 +86,9 @@ public class Transcriber implements TranscriptionService {
         }
 
         try {
-            Dotenv dotenv = Dotenv.load();
+            Dotenv dotenv = Dotenv.configure()
+                    .directory(System.getProperty("user.dir"))
+                    .load();
             key = dotenv.get("OPENAI_API_KEY");
         } catch (Exception ignored) {
         }

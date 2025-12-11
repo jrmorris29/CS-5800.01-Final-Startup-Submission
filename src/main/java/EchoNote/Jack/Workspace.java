@@ -9,12 +9,70 @@ import java.util.stream.Collectors;
 public class Workspace {
 
     private final List<MeetingRecord> records = new ArrayList<>();
+    private MeetingStorage storage;
+
+    public Workspace() {
+        // Default constructor without persistence
+    }
+
+    /**
+     * Creates a Workspace with persistence support.
+     * Automatically loads existing records from storage.
+     *
+     * @param storage the storage to use for persistence
+     */
+    public Workspace(MeetingStorage storage) {
+        this.storage = storage;
+        loadFromStorage();
+    }
+
+    /**
+     * Loads records from storage. Called on initialization.
+     */
+    private void loadFromStorage() {
+        if (storage != null) {
+            try {
+                List<MeetingRecord> loaded = storage.load();
+                records.addAll(loaded);
+                System.out.println("[Workspace] Loaded " + loaded.size() + " meetings from storage.");
+            } catch (StorageException e) {
+                System.err.println("[Workspace] Warning: Failed to load from storage: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Persists current records to storage.
+     */
+    private void persistToStorage() {
+        if (storage != null) {
+            try {
+                storage.save(records);
+            } catch (StorageException e) {
+                System.err.println("[Workspace] Warning: Failed to persist to storage: " + e.getMessage());
+            }
+        }
+    }
 
     public synchronized void save(MeetingRecord record) {
         Objects.requireNonNull(record, "record cannot be null");
 
         records.removeIf(r -> r.getId().equals(record.getId()));
         records.add(record);
+        persistToStorage();
+    }
+
+    /**
+     * Clears all meeting history from memory and storage.
+     *
+     * @return true if cleared successfully
+     */
+    public synchronized boolean clearAll() {
+        records.clear();
+        if (storage != null) {
+            return storage.clearHistory();
+        }
+        return true;
     }
 
     public synchronized List<MeetingRecord> findByQuery(String query) {

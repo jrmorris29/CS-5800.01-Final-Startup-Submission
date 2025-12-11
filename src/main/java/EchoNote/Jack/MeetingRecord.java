@@ -23,6 +23,17 @@ public class MeetingRecord {
         this.status = ApprovalStatus.DRAFT;
     }
 
+    /**
+     * Constructor that allows setting a specific UUID.
+     * Used for deserialization from storage.
+     *
+     * @param id the UUID to use for this record
+     */
+    protected MeetingRecord(UUID id) {
+        this.id = id;
+        this.status = ApprovalStatus.DRAFT;
+    }
+
     public UUID getId() {
         return id;
     }

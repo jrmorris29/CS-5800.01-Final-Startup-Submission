@@ -3,15 +3,37 @@ package EchoNote.Jack;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class MeetingRecordBuilder {
-    private final MeetingRecord record;
+    private MeetingRecord record;
     private final List<String> tags = new ArrayList<>();
     private final List<Participant> participants = new ArrayList<>();
     private List<ActionItem> actions = new ArrayList<>();
 
     public MeetingRecordBuilder() {
         this.record = new MeetingRecord();
+    }
+
+    /**
+     * Sets a specific UUID for the meeting record.
+     * Used when deserializing from storage to preserve the original ID.
+     *
+     * @param id the UUID to use
+     * @return this builder
+     */
+    public MeetingRecordBuilder withId(UUID id) {
+        // Create a new record with the predefined ID using anonymous subclass
+        MeetingRecord newRecord = new MeetingRecord(id) {};
+        // Copy existing state
+        newRecord.setTitle(record.getTitle());
+        newRecord.setDate(record.getDate());
+        newRecord.setStatus(record.getStatus());
+        newRecord.setTranscript(record.getTranscript());
+        newRecord.setSummary(record.getSummary());
+        newRecord.setAudioFilePath(record.getAudioFilePath());
+        this.record = newRecord;
+        return this;
     }
 
     public MeetingRecordBuilder withTitle(String title) {

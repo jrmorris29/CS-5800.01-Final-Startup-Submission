@@ -15,6 +15,18 @@ public class SearchService {
 
     public SearchService(Workspace workspace) {
         this.workspace = workspace;
+        // Index any existing records from workspace (e.g., loaded from storage)
+        indexExistingRecords();
+    }
+
+    /**
+     * Indexes all existing records from the workspace.
+     * Called on initialization to support loading from storage.
+     */
+    private void indexExistingRecords() {
+        for (MeetingRecord record : workspace.getAll()) {
+            index(record);
+        }
     }
 
     public void index(MeetingRecord record) {
@@ -24,6 +36,13 @@ public class SearchService {
         if (!indexedRecords.contains(record)) {
             indexedRecords.add(record);
         }
+    }
+
+    /**
+     * Clears all indexed records.
+     */
+    public void clearIndex() {
+        indexedRecords.clear();
     }
 
     public List<MeetingRecord> search(String query) {

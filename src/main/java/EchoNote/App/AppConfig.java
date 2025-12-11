@@ -3,6 +3,7 @@ package EchoNote.App;
 import EchoNote.Arpit.EmailNotifier;
 import EchoNote.Arpit.ExportService;
 import EchoNote.Arpit.SearchService;
+import EchoNote.Jack.MeetingStorage;
 import EchoNote.Jack.Workspace;
 import EchoNote.Mihail.Summarizer;
 import EchoNote.Mihail.Transcriber;
@@ -11,6 +12,7 @@ import EchoNote.Mihail.Transcriber;
 public class AppConfig {
 
     private final Workspace workspace;
+    private final MeetingStorage meetingStorage;
     private final Transcriber transcriber;
     private final Summarizer summarizer;
     private final ExportService exportService;
@@ -18,7 +20,11 @@ public class AppConfig {
     private final EmailNotifier emailNotifier;
 
     public AppConfig() {
-        this.workspace = new Workspace();
+        // Initialize storage for persistence
+        this.meetingStorage = new MeetingStorage();
+
+        // Create workspace with storage support (auto-loads saved meetings)
+        this.workspace = new Workspace(meetingStorage);
 
         this.transcriber = new Transcriber();
         this.summarizer = new Summarizer();
@@ -26,6 +32,10 @@ public class AppConfig {
         this.exportService = new ExportService();
         this.searchService = new SearchService(workspace);
         this.emailNotifier = new EmailNotifier();
+    }
+
+    public MeetingStorage getMeetingStorage() {
+        return meetingStorage;
     }
 
     public Workspace getWorkspace() {

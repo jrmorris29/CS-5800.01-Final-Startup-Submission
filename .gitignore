@@ -40,3 +40,12 @@ build/
 
 ### Ignore all env files ###
 .env*
+
+### Temporary stash directories ###
+.stash_arpit/
+.stash_mihail/
+
+### Runtime data ###
+echonote-meetings.json
+exports/
+recordings/

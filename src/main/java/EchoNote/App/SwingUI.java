@@ -100,9 +100,10 @@ public class SwingUI extends JFrame {
         JPanel buttonPanel = new JPanel(new GridLayout(0, 1, 4, 4));
         JButton newFromMicBtn = new JButton("New Meeting from Mic");
         JButton newFromWavBtn = new JButton("New Meeting from WAV");
-        JButton exportBtn = new JButton("Export as Markdown");
+        JButton exportBtn = new JButton("Export Meeting");
         JButton emailBtn = new JButton("Email Summary");
         JButton refreshBtn = new JButton("Refresh List");
+        JButton clearHistoryBtn = new JButton("Clear History");
         JButton exitBtn = new JButton("Exit");
 
         buttonPanel.add(newFromMicBtn);
@@ -110,6 +111,7 @@ public class SwingUI extends JFrame {
         buttonPanel.add(exportBtn);
         buttonPanel.add(emailBtn);
         buttonPanel.add(refreshBtn);
+        buttonPanel.add(clearHistoryBtn);
         buttonPanel.add(exitBtn);
 
         rightPanel.add(buttonPanel, BorderLayout.EAST);
@@ -125,6 +127,7 @@ public class SwingUI extends JFrame {
         exportBtn.addActionListener(e -> handleExportSelected());
         emailBtn.addActionListener(e -> handleEmailSelected());
         refreshBtn.addActionListener(e -> refreshMeetingList());
+        clearHistoryBtn.addActionListener(e -> handleClearHistory());
         exitBtn.addActionListener(e -> System.exit(0));
     }
 
@@ -471,6 +474,28 @@ public class SwingUI extends JFrame {
             record.setAudioFilePath(wavFile.getAbsolutePath());
         }
         return record;
+    }
+
+    private void handleClearHistory() {
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to clear all meeting history?\nThis action cannot be undone.",
+                "Clear History",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (option == JOptionPane.YES_OPTION) {
+            boolean cleared = workspace.clearAll();
+            if (cleared) {
+                searchService.clearIndex();
+                refreshMeetingList();
+                detailsArea.setText("");
+                setStatus("Meeting history cleared successfully.");
+            } else {
+                showError("Failed to clear meeting history.");
+            }
+        }
     }
 
     private void refreshMeetingList() {

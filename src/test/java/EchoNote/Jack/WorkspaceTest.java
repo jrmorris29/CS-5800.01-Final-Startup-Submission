@@ -106,4 +106,29 @@ public class WorkspaceTest {
                 () -> workspace.getById("  "),
                 "Blank id string should throw IllegalArgumentException");
     }
+
+    @Test
+    void clearAll_removesAllRecords() {
+        Workspace workspace = new Workspace();
+        workspace.save(createRecord("Meeting 1"));
+        workspace.save(createRecord("Meeting 2"));
+        workspace.save(createRecord("Meeting 3"));
+
+        assertEquals(3, workspace.getAll().size(), "Should have 3 records before clearing");
+
+        boolean result = workspace.clearAll();
+
+        assertTrue(result, "clearAll should return true on success");
+        assertEquals(0, workspace.getAll().size(), "Should have 0 records after clearing");
+    }
+
+    @Test
+    void clearAll_emptyWorkspace_returnsTrue() {
+        Workspace workspace = new Workspace();
+
+        boolean result = workspace.clearAll();
+
+        assertTrue(result, "clearAll on empty workspace should return true");
+        assertEquals(0, workspace.getAll().size());
+    }
 }
