@@ -71,6 +71,8 @@ Github Commit(s): https://github.com/jrmorris29/CS-5800.01-Final-Startup-Submiss
 
 ### 1. Persistent Meeting History *(Implemented by Jack Morris)*
 
+Commit: https://github.com/jrmorris29/CS-5800.01-Final-Startup-Submission/commit/8e67c95bb03f319058e3787877d37ed02333a5bc
+
 **Overview**
 
 EchoNote now persists all meetings to disk so the workspace survives app restarts.
@@ -107,6 +109,8 @@ EchoNote now persists all meetings to disk so the workspace survives app restart
 
 ### 2. Multi-Format Export *(Implemented by Arpit)*
 
+Commit: https://github.com/jrmorris29/CS-5800.01-Final-Startup-Submission/commit/5a9cfc726358187bb18f567b1880d2f1a345538a
+
 **Overview**
 
 Meetings can now be exported in multiple formats, with a UI flow for choosing the desired format.
@@ -137,6 +141,8 @@ Meetings can now be exported in multiple formats, with a UI flow for choosing th
 ---
 
 ### 3. Email Draft Flow *(Implemented by Mihail)*
+
+Commit: https://github.com/jrmorris29/CS-5800.01-Final-Startup-Submission/commit/f95602e46ecb4adb043085253a983e2d51d86599
 
 **Overview**
 
