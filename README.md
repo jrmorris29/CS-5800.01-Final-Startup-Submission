@@ -190,3 +190,20 @@ EchoNote can now prepare an email draft of the meeting summary using the user’
 - Backward compatible with the older `emailParticipants()` method.
 
 
+
+# Part 3
+
+This refactor applies Robert C. Martin's Clean Code principles and Google Java Style guidelines:
+
+### Changes Made
+- **DRY Principle**: Created `MeetingFormatter` utility class to centralize repeated formatting logic across `EmailDraftService`, `EmailNotifier`, `MarkdownExporter`, and `HtmlExporter`
+- **Small, Focused Methods**: Broke up large methods in `SwingUI`, `Recorder`, and `HtmlExporter` into single-purpose helper methods
+- **Meaningful Constants**: Extracted magic numbers in `Recorder` (e.g., `BUFFER_SIZE`, `SAMPLE_RATE`, `SAMPLE_SIZE_BITS`)
+- **Consistent Formatting**: Removed extra blank lines between methods and trailing blank lines per Google Java Style
+- **UML Updates**: Updated all PlantUML diagrams to reflect the new `MeetingFormatter` class and its dependencies
+
+### Files Modified
+- 22 source files (whitespace cleanup and structural improvements)
+- 6 test files (whitespace cleanup)
+- 4 UML diagrams (added MeetingFormatter)
+- 1 new file: `MeetingFormatter.java`
