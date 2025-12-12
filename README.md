@@ -193,6 +193,8 @@ EchoNote can now prepare an email draft of the meeting summary using the user’
 
 # Part 3
 
+Commit: https://github.com/jrmorris29/CS-5800.01-Final-Startup-Submission/commit/20151883a944526357dc74006823c00b8f6b6a50
+
 This refactor applies Robert C. Martin's Clean Code principles and Google Java Style guidelines:
 
 ### Changes Made
