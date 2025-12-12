@@ -108,4 +108,3 @@ public class MeetingStorage {
         return storageFile;
     }
 }
-

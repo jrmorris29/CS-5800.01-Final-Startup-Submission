@@ -5,6 +5,7 @@ import EchoNote.Arpit.SearchService;
 import EchoNote.Jack.ActionItem;
 import EchoNote.Jack.ExportFormat;
 import EchoNote.Jack.ExportResult;
+import EchoNote.Jack.MeetingFormatter;
 import EchoNote.Jack.MeetingRecord;
 import EchoNote.Jack.Summary;
 import EchoNote.Jack.Transcript;
@@ -64,15 +65,37 @@ public class SwingUI extends JFrame {
         setLayout(new BorderLayout(8, 8));
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        JPanel leftPanel = new JPanel(new BorderLayout(4, 4));
-        JPanel searchPanel = new JPanel(new BorderLayout(4, 4));
-        searchPanel.add(new JLabel("Search:"), BorderLayout.WEST);
-        searchPanel.add(searchField, BorderLayout.CENTER);
-        JButton searchButton = new JButton("Go");
-        searchPanel.add(searchButton, BorderLayout.EAST);
-        searchButton.addActionListener(e -> handleSearch());
+        add(createMeetingListPanel(), BorderLayout.CENTER);
+        add(createDetailsPanel(), BorderLayout.EAST);
 
+        statusLabel.setBorder(new EmptyBorder(4, 0, 0, 0));
+        add(statusLabel, BorderLayout.SOUTH);
+    }
+
+    private JPanel createMeetingListPanel() {
+        JPanel panel = new JPanel(new BorderLayout(4, 4));
+        panel.add(createSearchPanel(), BorderLayout.NORTH);
+
+        configureMeetingListRenderer();
         meetingList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        panel.add(new JScrollPane(meetingList), BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createSearchPanel() {
+        JPanel panel = new JPanel(new BorderLayout(4, 4));
+        panel.add(new JLabel("Search:"), BorderLayout.WEST);
+        panel.add(searchField, BorderLayout.CENTER);
+
+        JButton searchButton = new JButton("Go");
+        searchButton.addActionListener(e -> handleSearch());
+        panel.add(searchButton, BorderLayout.EAST);
+
+        return panel;
+    }
+
+    private void configureMeetingListRenderer() {
         meetingList.setCellRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(
@@ -86,51 +109,40 @@ public class SwingUI extends JFrame {
                 return this;
             }
         });
+    }
 
-        JScrollPane listScroll = new JScrollPane(meetingList);
-        leftPanel.add(searchPanel, BorderLayout.NORTH);
-        leftPanel.add(listScroll, BorderLayout.CENTER);
+    private JPanel createDetailsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(4, 4));
 
-        JPanel rightPanel = new JPanel(new BorderLayout(4, 4));
         detailsArea.setEditable(false);
         detailsArea.setLineWrap(true);
         detailsArea.setWrapStyleWord(true);
         JScrollPane detailsScroll = new JScrollPane(detailsArea);
         detailsScroll.setBorder(BorderFactory.createTitledBorder("Details"));
-        rightPanel.add(detailsScroll, BorderLayout.CENTER);
+        panel.add(detailsScroll, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(0, 1, 4, 4));
-        JButton newFromMicBtn = new JButton("New Meeting from Mic");
-        JButton newFromWavBtn = new JButton("New Meeting from WAV");
-        JButton exportBtn = new JButton("Export Meeting");
-        JButton emailBtn = new JButton("Email Summary");
-        JButton refreshBtn = new JButton("Refresh List");
-        JButton clearHistoryBtn = new JButton("Clear History");
-        JButton exitBtn = new JButton("Exit");
+        panel.add(createButtonPanel(), BorderLayout.EAST);
+        return panel;
+    }
 
-        buttonPanel.add(newFromMicBtn);
-        buttonPanel.add(newFromWavBtn);
-        buttonPanel.add(exportBtn);
-        buttonPanel.add(emailBtn);
-        buttonPanel.add(refreshBtn);
-        buttonPanel.add(clearHistoryBtn);
-        buttonPanel.add(exitBtn);
+    private JPanel createButtonPanel() {
+        JPanel panel = new JPanel(new GridLayout(0, 1, 4, 4));
 
-        rightPanel.add(buttonPanel, BorderLayout.EAST);
+        addButton(panel, "New Meeting from Mic", e -> handleNewMeetingFromMic());
+        addButton(panel, "New Meeting from WAV", e -> handleNewMeetingFromWav());
+        addButton(panel, "Export Meeting", e -> handleExportSelected());
+        addButton(panel, "Email Summary", e -> handleEmailSelected());
+        addButton(panel, "Refresh List", e -> refreshMeetingList());
+        addButton(panel, "Clear History", e -> handleClearHistory());
+        addButton(panel, "Exit", e -> System.exit(0));
 
-        add(leftPanel, BorderLayout.CENTER);
-        add(rightPanel, BorderLayout.EAST);
+        return panel;
+    }
 
-        statusLabel.setBorder(new EmptyBorder(4, 0, 0, 0));
-        add(statusLabel, BorderLayout.SOUTH);
-
-        newFromMicBtn.addActionListener(e -> handleNewMeetingFromMic());
-        newFromWavBtn.addActionListener(e -> handleNewMeetingFromWav());
-        exportBtn.addActionListener(e -> handleExportSelected());
-        emailBtn.addActionListener(e -> handleEmailSelected());
-        refreshBtn.addActionListener(e -> refreshMeetingList());
-        clearHistoryBtn.addActionListener(e -> handleClearHistory());
-        exitBtn.addActionListener(e -> System.exit(0));
+    private void addButton(JPanel panel, String label, java.awt.event.ActionListener action) {
+        JButton button = new JButton(label);
+        button.addActionListener(action);
+        panel.add(button);
     }
 
     private void initBehavior() {
@@ -552,40 +564,14 @@ public class SwingUI extends JFrame {
         sb.append("Title: ").append(record.getTitle()).append("\n");
         sb.append("Date: ").append(record.getDate()).append("\n\n");
 
-        Summary summary = record.getSummary();
-        if (summary != null) {
+        if (record.getSummary() != null) {
             sb.append("SUMMARY\n");
-            if (summary.getNotes() != null) {
-                sb.append(summary.getNotes()).append("\n\n");
-            }
-            if (!summary.getTopics().isEmpty()) {
-                sb.append("Topics:\n");
-                for (String t : summary.getTopics()) {
-                    sb.append(" - ").append(t).append("\n");
-                }
-                sb.append("\n");
-            }
-            if (!summary.getDecisions().isEmpty()) {
-                sb.append("Decisions:\n");
-                for (String d : summary.getDecisions()) {
-                    sb.append(" - ").append(d).append("\n");
-                }
-                sb.append("\n");
-            }
+            sb.append(MeetingFormatter.formatSummaryAsText(record.getSummary()));
         }
 
         if (!record.getActions().isEmpty()) {
             sb.append("ACTION ITEMS\n");
-            for (ActionItem item : record.getActions()) {
-                sb.append(" - ").append(item.getTitle());
-                if (item.getOwner() != null) {
-                    sb.append(" (Owner: ").append(item.getOwner().getName()).append(")");
-                }
-                if (item.getDueDate() != null) {
-                    sb.append(" [Due: ").append(item.getDueDate()).append("]");
-                }
-                sb.append("\n");
-            }
+            sb.append(MeetingFormatter.formatActionsAsText(record.getActions()));
         }
 
         if (record.getAudioFilePath() != null) {

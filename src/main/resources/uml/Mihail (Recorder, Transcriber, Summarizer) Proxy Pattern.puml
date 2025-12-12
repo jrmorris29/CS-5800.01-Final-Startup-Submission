@@ -35,6 +35,7 @@ package "EchoNote.Jack" {
     }
 
     class MeetingRecord
+    class MeetingFormatter <<Utility>>
     class InvalidEmailException
 }
 
@@ -137,8 +138,7 @@ Recorder --> TranscriptionException : throws
 
 ' Email Draft Flow
 EmailDraftService --> MeetingRecord : reads
-EmailDraftService --> Summary : formats
-EmailDraftService --> ActionItem : formats
+EmailDraftService --> MeetingFormatter : uses
 EmailDraftService --> InvalidEmailException : throws
 EmailDraftService --> EmailDraftException : throws
 

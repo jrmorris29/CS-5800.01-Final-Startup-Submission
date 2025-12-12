@@ -49,7 +49,6 @@ public class MeetingRecordIterator implements Iterator<MeetingRecord> {
         return result;
     }
 
-
     private void computeNext() {
         nextRecord = null;
         while (currentIndex < records.size()) {
@@ -80,8 +79,7 @@ public class MeetingRecordIterator implements Iterator<MeetingRecord> {
     public static MeetingRecordIterator byTitleContaining(List<MeetingRecord> records, String searchTerm) {
         String lowerSearch = searchTerm != null ? searchTerm.toLowerCase() : "";
         return new MeetingRecordIterator(records,
-                record -> record.getTitle() != null && 
+                record -> record.getTitle() != null &&
                         record.getTitle().toLowerCase().contains(lowerSearch));
     }
 }
-

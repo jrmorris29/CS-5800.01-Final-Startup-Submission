@@ -1,15 +1,13 @@
 package EchoNote.Mihail;
 
-import EchoNote.Jack.ActionItem;
 import EchoNote.Jack.InvalidEmailException;
+import EchoNote.Jack.MeetingFormatter;
 import EchoNote.Jack.MeetingRecord;
-import EchoNote.Jack.Summary;
 
 import java.awt.Desktop;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.regex.Pattern;
 
 
@@ -79,59 +77,29 @@ public class EmailDraftService {
      * Returns the formatted subject line for an email draft.
      */
     public String buildDraftSubject(MeetingRecord record) {
-        String title = record.getTitle() != null ? record.getTitle() : "Meeting";
-        return "EchoNote Summary - " + title;
+        return "EchoNote Summary - " + MeetingFormatter.getTitleOrDefault(record);
     }
 
     /**
-     * Returns the formatted body text for an email draft, similar to the Details panel format.
+     * Returns the formatted body text for an email draft.
      */
     public String buildDraftBody(MeetingRecord record) {
         StringBuilder sb = new StringBuilder();
 
-        String title = record.getTitle() != null ? record.getTitle() : "Meeting";
+        String title = MeetingFormatter.getTitleOrDefault(record);
         sb.append("Hello,\n\n");
         sb.append("Here is the summary for: ").append(title).append("\n\n");
 
-        Summary summary = record.getSummary();
-        if (summary != null) {
+        if (record.getSummary() != null) {
             sb.append("--- SUMMARY ---\n");
-            if (summary.getNotes() != null && !summary.getNotes().isBlank()) {
-                sb.append(summary.getNotes()).append("\n\n");
-            }
-            if (!summary.getTopics().isEmpty()) {
-                sb.append("Topics:\n");
-                for (String topic : summary.getTopics()) {
-                    sb.append(" - ").append(topic).append("\n");
-                }
-                sb.append("\n");
-            }
-            if (!summary.getDecisions().isEmpty()) {
-                sb.append("Decisions:\n");
-                for (String decision : summary.getDecisions()) {
-                    sb.append(" - ").append(decision).append("\n");
-                }
-                sb.append("\n");
-            }
+            sb.append(MeetingFormatter.formatSummaryAsText(record.getSummary()));
         } else {
             sb.append("No summary available for this meeting.\n\n");
         }
 
-        List<ActionItem> actionItems = record.getActions();
-        if (actionItems != null && !actionItems.isEmpty()) {
+        if (record.getActions() != null && !record.getActions().isEmpty()) {
             sb.append("--- ACTION ITEMS ---\n");
-            for (ActionItem item : actionItems) {
-                if (item != null) {
-                    sb.append(" - ").append(item.getTitle());
-                    if (item.getOwner() != null) {
-                        sb.append(" (Owner: ").append(item.getOwner().getName()).append(")");
-                    }
-                    if (item.getDueDate() != null) {
-                        sb.append(" [Due: ").append(item.getDueDate()).append("]");
-                    }
-                    sb.append("\n");
-                }
-            }
+            sb.append(MeetingFormatter.formatActionsAsText(record.getActions()));
             sb.append("\n");
         }
 
@@ -174,4 +142,3 @@ public class EmailDraftService {
         }
     }
 }
-

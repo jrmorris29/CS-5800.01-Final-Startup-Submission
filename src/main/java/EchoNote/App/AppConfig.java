@@ -8,7 +8,6 @@ import EchoNote.Mihail.EmailDraftService;
 import EchoNote.Mihail.Summarizer;
 import EchoNote.Mihail.Transcriber;
 
-
 public class AppConfig {
 
     private final Workspace workspace;

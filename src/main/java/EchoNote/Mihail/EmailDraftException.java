@@ -13,4 +13,3 @@ public class EmailDraftException extends RuntimeException {
         super(message, cause);
     }
 }
-

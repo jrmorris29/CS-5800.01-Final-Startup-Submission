@@ -115,7 +115,6 @@ public class MeetingRecord {
         }
     }
 
-
     public String getAudioFilePath() {
         return audioFilePath;
     }

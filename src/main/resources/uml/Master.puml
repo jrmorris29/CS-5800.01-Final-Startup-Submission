@@ -49,6 +49,15 @@ package "EchoNote.Jack" {
     class MeetingRecordDto
     class StorageException
 
+    ' Formatting Utility
+    class MeetingFormatter <<Utility>> {
+        + {static} formatSummaryAsText(summary : Summary) : String
+        + {static} formatActionsAsText(actions : List<ActionItem>) : String
+        + {static} formatActionItemAsText(action : ActionItem) : String
+        + {static} getTitleOrDefault(record : MeetingRecord) : String
+        + {static} getTitleOrId(record : MeetingRecord) : String
+    }
+
     enum TranscriptSource
     enum ApprovalStatus
     enum ActionStatus
@@ -196,9 +205,17 @@ EmailNotifier --> NotificationException
 
 ' Email Draft Flow Feature
 EmailDraftService --> MeetingRecord
-EmailDraftService --> Summary
-EmailDraftService --> ActionItem
+EmailDraftService --> MeetingFormatter : uses
 EmailDraftService --> InvalidEmailException
 EmailDraftService --> EmailDraftException
+
+' MeetingFormatter Utility dependencies
+MeetingFormatter --> Summary : formats
+MeetingFormatter --> ActionItem : formats
+MeetingFormatter --> MeetingRecord : reads
+SwingUI --> MeetingFormatter : uses
+MarkdownExporter --> MeetingFormatter : uses
+HtmlExporter --> MeetingFormatter : uses
+EmailNotifier --> MeetingFormatter : uses
 
 @enduml

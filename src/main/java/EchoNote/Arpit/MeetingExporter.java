@@ -23,4 +23,3 @@ public interface MeetingExporter {
      */
     String getFileExtension();
 }
-

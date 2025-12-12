@@ -18,7 +18,6 @@ public class ActionItem {
         this.status = ActionStatus.OPEN;
     }
 
-
     public ActionItem(String title, Participant owner, LocalDate dueDate, ActionStatus status) {
         this(UUID.randomUUID().toString(), title, owner, dueDate);
         if (status != null) {

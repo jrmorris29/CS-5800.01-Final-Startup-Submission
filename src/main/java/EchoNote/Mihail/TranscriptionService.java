@@ -10,4 +10,3 @@ import java.nio.file.Path;
 public interface TranscriptionService {
     Transcript transcribe(Path audioFile);
 }
-

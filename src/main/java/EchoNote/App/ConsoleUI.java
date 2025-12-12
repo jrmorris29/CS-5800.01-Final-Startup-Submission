@@ -148,7 +148,6 @@ public class ConsoleUI {
         }
     }
 
-
     private MeetingRecord buildMeetingRecord(Transcript transcript,
                                              Summary summary,
                                              List<ActionItem> actions) {

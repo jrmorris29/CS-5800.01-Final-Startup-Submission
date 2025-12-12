@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-
 /**
  * Proxy Pattern - RealSubject.
  *
@@ -71,8 +70,6 @@ public class Transcriber implements TranscriptionService {
             String json = response.body() != null ? response.body().string() : "";
             JsonNode root = objectMapper.readTree(json);
             String text = root.has("text") ? root.get("text").asText() : "";
-
-
             return new Transcript(text, TranscriptSource.LIVE);
         } catch (IOException e) {
             throw new TranscriptionException("Error calling OpenAI transcription API", e);

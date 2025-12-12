@@ -1,13 +1,14 @@
 package EchoNote.Arpit;
 
+import EchoNote.Jack.MeetingFormatter;
 import EchoNote.Jack.MeetingRecord;
 import EchoNote.Jack.Participant;
-import EchoNote.Jack.Summary;
-import EchoNote.Jack.ActionItem;
 
 import java.util.List;
 
-
+/**
+ * Sends email notifications to meeting participants with summary and action items.
+ */
 public class EmailNotifier implements Notifier {
 
     private final boolean simulateFailure;
@@ -35,51 +36,57 @@ public class EmailNotifier implements Notifier {
             return;
         }
 
-        Summary summary = record.getSummary();
-        List<ActionItem> actionItems = record.getActions();
-
         String subject = buildSubject(record, eventId);
-        String body = buildBody(record, summary, actionItems);
+        String body = buildBody(record);
 
-        for (Participant p : participants) {
-            if (p == null || p.getEmail() == null || p.getEmail().isBlank()) {
-                continue;
+        sendToAllParticipants(participants, subject, body);
+    }
+
+    private void sendToAllParticipants(List<Participant> participants, String subject, String body) {
+        for (Participant participant : participants) {
+            if (hasValidEmail(participant)) {
+                printEmail(participant.getEmail(), subject, body);
             }
-            System.out.println("=== Email to: " + p.getEmail() + " ===");
-            System.out.println("Subject: " + subject);
-            System.out.println();
-            System.out.println(body);
-            System.out.println("======================================");
         }
     }
 
+    private boolean hasValidEmail(Participant participant) {
+        return participant != null
+                && participant.getEmail() != null
+                && !participant.getEmail().isBlank();
+    }
+
+    private void printEmail(String email, String subject, String body) {
+        System.out.println("=== Email to: " + email + " ===");
+        System.out.println("Subject: " + subject);
+        System.out.println();
+        System.out.println(body);
+        System.out.println("======================================");
+    }
+
     private String buildSubject(MeetingRecord record, String eventId) {
-        String title = record.getTitle() != null ? record.getTitle() : "Meeting";
+        String title = MeetingFormatter.getTitleOrDefault(record);
         if (eventId != null && !eventId.isBlank()) {
             return "[EchoNote] " + title + " (Event " + eventId + ")";
         }
         return "[EchoNote] " + title;
     }
 
-    private String buildBody(MeetingRecord record, Summary summary, List<ActionItem> actionItems) {
+    private String buildBody(MeetingRecord record) {
         StringBuilder sb = new StringBuilder();
 
-        String title = record.getTitle() != null ? record.getTitle() : "Meeting";
+        String title = MeetingFormatter.getTitleOrDefault(record);
         sb.append("Hello,\n\n");
         sb.append("Here are the notes and action items for: ").append(title).append(".\n\n");
 
-        if (summary != null) {
+        if (record.getSummary() != null) {
             sb.append("=== Summary ===\n");
-            sb.append(summary.toString()).append("\n\n");
+            sb.append(record.getSummary().toString()).append("\n\n");
         }
 
-        if (actionItems != null && !actionItems.isEmpty()) {
+        if (!record.getActions().isEmpty()) {
             sb.append("=== Action Items ===\n");
-            for (ActionItem item : actionItems) {
-                if (item != null) {
-                    sb.append("- ").append(item.toString()).append("\n");
-                }
-            }
+            sb.append(MeetingFormatter.formatActionsAsText(record.getActions()));
             sb.append("\n");
         } else {
             sb.append("No action items were recorded.\n\n");

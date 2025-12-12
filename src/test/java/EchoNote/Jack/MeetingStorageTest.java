@@ -122,4 +122,3 @@ public class MeetingStorageTest {
         assertTrue(storage.hasStoredData(), "Should return true after saving data");
     }
 }
-

@@ -173,6 +173,15 @@ package "EchoNote.Jack" {
 
     class InvalidEmailException
     class RecordNotFoundException
+
+    ' Formatting Utility
+    class MeetingFormatter <<Utility>> {
+        + {static} formatSummaryAsText(summary : Summary) : String
+        + {static} formatActionsAsText(actions : List<ActionItem>) : String
+        + {static} formatActionItemAsText(action : ActionItem) : String
+        + {static} getTitleOrDefault(record : MeetingRecord) : String
+        + {static} getTitleOrId(record : MeetingRecord) : String
+    }
 }
 
 ' Builder
@@ -213,5 +222,10 @@ ActionItem --> Participant
 ExportResult --> MeetingRecord
 ExportResult --> ExportFormat
 ExportResult --> ExportDestination
+
+' MeetingFormatter Utility
+MeetingFormatter --> Summary : formats
+MeetingFormatter --> ActionItem : formats
+MeetingFormatter --> MeetingRecord : reads
 
 @enduml

@@ -21,7 +21,6 @@ public class TranscriberProxy implements TranscriptionService {
     private int cacheHits;
     private int apiCalls;
 
-
     public TranscriberProxy(TranscriptionService realTranscriber, boolean loggingEnabled) {
         this.realTranscriber = realTranscriber;
         this.cache = new ConcurrentHashMap<>();
@@ -31,11 +30,9 @@ public class TranscriberProxy implements TranscriptionService {
         this.apiCalls = 0;
     }
 
-
     public TranscriberProxy(TranscriptionService realTranscriber) {
         this(realTranscriber, true);
     }
-
 
     public TranscriberProxy() {
         this(new Transcriber(), true);
@@ -106,4 +103,3 @@ public class TranscriberProxy implements TranscriptionService {
         }
     }
 }
-

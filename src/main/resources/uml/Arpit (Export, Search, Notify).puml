@@ -20,6 +20,7 @@ package "EchoNote.Jack" {
     class Summary
     class ActionItem
     class ExportResult
+    class MeetingFormatter <<Utility>>
     enum ExportFormat
 }
 
@@ -92,13 +93,11 @@ ExportService --> UnsupportedExportException : throws
 
 MarkdownExporter --> MeetingRecord
 MarkdownExporter --> ExportResult
-MarkdownExporter --> Summary
-MarkdownExporter --> ActionItem
+MarkdownExporter --> MeetingFormatter : uses
 
 HtmlExporter --> MeetingRecord
 HtmlExporter --> ExportResult
-HtmlExporter --> Summary
-HtmlExporter --> ActionItem
+HtmlExporter --> MeetingFormatter : uses
 
 ' Search dependencies
 SearchService --> Workspace
@@ -109,8 +108,7 @@ Notifier --> MeetingRecord
 EmailNotifier ..|> Notifier
 EmailNotifier --> MeetingRecord
 EmailNotifier --> Participant
-EmailNotifier --> Summary
-EmailNotifier --> ActionItem
+EmailNotifier --> MeetingFormatter : uses
 EmailNotifier --> NotificationException
 
 @enduml

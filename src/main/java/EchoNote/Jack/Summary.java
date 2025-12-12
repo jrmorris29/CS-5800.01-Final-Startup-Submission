@@ -11,11 +11,9 @@ public class Summary {
     private final List<String> decisions = new ArrayList<>();
     private String notes;
 
-
     public Summary(String id) {
         this.id = id;
     }
-
 
     public Summary(List<String> topics, List<String> decisions, String notes) {
         this(UUID.randomUUID().toString());
